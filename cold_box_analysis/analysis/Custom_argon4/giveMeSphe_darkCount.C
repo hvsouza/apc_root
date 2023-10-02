@@ -5,24 +5,24 @@
 
 void giveMeSphe_darkCount(){
     
-    SPHE2 dark("spe");
+    SPHE dark;
     
     dark.led_calibration=true;
     
     dark.just_a_test = false;
-    dark.just_this = 200;
+    dark.just_this = 10000;
     // dark.check_selection = false;
-    dark.rootfile = "analyzed";
     
     dark.tolerance = 3.5; // n sigmas (smoothed)
     dark.baseLimit = 2; // higher then this wont contribute to the baseline abs(baseLimit)
-    dark.baselineTime = 5000;
+    dark.baselineTime = 4000;
     // dark.start = 10310; // start the search for peaks or start the integration (led)
     // dark.finish = 10700; // fisish the search or finish the integration (led)
 
-    dark.start = 10280; // start the search for peaks or start the integration (led)
-    dark.finish = 10700; // fisish the search or finish the integration (led)
+    dark.start = 5650; // start the search for peaks or start the integration (led)
+    dark.finish = 6100; // fisish the search or finish the integration (led)
 
+    dark.timeLimit = 0; // time after LED signal
     dark.timeLow = 8; // integration time before peak
     dark.timeHigh = 340; // integration time after peak
     
@@ -32,33 +32,33 @@ void giveMeSphe_darkCount(){
     dark.too_big = 1000; // if there is a peak > "too_big" .. wait "waiting" ns
     dark.waiting = 1000;
 
-    dark.filter = 16;
+    dark.filter = 6;
     dark.interactions = 45; // for moving avarage
-
+    dark.shifter = 20;
+    
     dark.dtime = 4.;
 
     dark.get_wave_form = true;
-    dark.mean_before = 5000; // time recorded before and after the peak found 
-    dark.mean_after = 15000;
+    dark.mean_before = 120; // time recorded before and after the peak found 
+    dark.mean_after = 1000;
     // dark.sphe_charge_ch0 = 4486.84; //wave0
     // dark.sphe_charge2_ch0 = 8910.46; // wave0
-    dark.deltaplus = 1;
-    dark.deltaminus = 0;
-    dark.tolerance = 1e12;
-    dark.spe_max_val_at_time_cut = 1e12; // after `time_cut`, the signal cannot be higher than this
+    dark.deltaplus = 1.35;
+    dark.deltaminus = 1.4;
+    
 
-    dark.time_cut = 2000; // in ns seconds
+    dark.sphe_charge_ch0 = 2208.27; //wave0
+    dark.sphe_charge2_ch0 = 4273.29; // wave0
 
-
-    dark.sphe_charge = 7169.9; //wave0
-    dark.sphe_charge2 = 14257.6; // wave0
-    dark.sphe_std = 1705.7;
+    // dark.channel = 3;
+    // dark.check_selection = true;
+    // dark.giveMeSphe_darkCount("analyzed");
 
     dark.channel = 0;
-        
-    
-    dark.giveMeSphe();
-
+    dark.deltaplus = 1.35;
+    dark.deltaminus = 1.4;
+    dark.check_selection = true;
+    dark.giveMeSphe_darkCount("analyzed");
 
     
     gROOT->SetBatch(kFALSE);
