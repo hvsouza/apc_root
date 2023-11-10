@@ -145,6 +145,9 @@ class Calibration
 
     TH1D *htemp = nullptr;
     TH1D *hcharge = nullptr;
+
+
+    Bool_t drawDebugLines = false;
   
   
     // ____________________________________________________________________________________________________ //
@@ -666,10 +669,12 @@ class Calibration
       l2->SetLineWidth(2);
       l1->SetLineColor(kRed);
       l2->SetLineColor(kRed);
-    
-      l1->Draw("");
-      l2->Draw("");
-    
+
+      if (drawDebugLines){
+        l1->Draw("");
+        l2->Draw("");
+      }
+
     
       if(darknoise){
         // ____________________________ Start dark noise CT analysis ____________________________ //

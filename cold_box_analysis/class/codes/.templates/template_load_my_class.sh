@@ -20,8 +20,6 @@
 
 #!/bin/bash
 
-#!/bin/bash
-
 # Set default values for the parameters
 file="analyzed.root"
 npts=5000
