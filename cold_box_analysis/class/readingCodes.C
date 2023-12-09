@@ -234,7 +234,7 @@ class Read{
 
     string file_extension = ".txt";
   
-    Bool_t OnlyOneEvent = false; // Do you want only one event? Choose it wisely
+    Bool_t OnlySomeEvents = false; // Do you want only one event? Choose it wisely
     Int_t stopEvent = 2000;
   
     Int_t maxEvents = 100000;
@@ -336,18 +336,20 @@ class Read{
         }
         int found  = dataname.find(wave_ref);
         if(found==-1){
-          logfile.close();
-          return;
+          tempch.push_back(aux);
         }
-        found = found + wave_ref.length();
-        wavenum = (int)dataname[found] - '0';
-        // cout << wavenum << endl;
-        if(wavenum != temp){
-          if (aux == 0) temp = wavenum;
-          tempch.push_back(wavenum);
-        }
-        else{
-          break;
+        else
+        {
+          found = found + wave_ref.length();
+          wavenum = (int)dataname[found] - '0';
+          // cout << wavenum << endl;
+          if(wavenum != temp){
+            if (aux == 0) temp = wavenum;
+            tempch.push_back(wavenum);
+          }
+          else{
+            break;
+          }
         }
         aux++;
       }
@@ -781,7 +783,7 @@ class Read{
           }
         }
 
-        if(OnlyOneEvent == true && eventFile==stopEvent-1){
+        if(OnlySomeEvents == true && eventFile==stopEvent-1){
           closeMyWhile=true;
         }
         eventFile++;
