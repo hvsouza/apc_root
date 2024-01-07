@@ -535,21 +535,25 @@ class ANALYZER{
       }
 
     }
-    void averageFFT(Int_t maxevent = 0, string selection = "", bool inDecibel = true, Double_t factor = 0, Double_t filter = 0){
+    void averageFFT(Int_t maxevent = 0, Int_t startevent = 0, string selection = "", bool inDecibel = true, Double_t factor = 0, Double_t filter = 0){
       if (maxevent==0) {
         maxevent = nentries;
       }
       getSelection(selection);
       Int_t nev = lev->GetN();
-      if (maxevent < nev) {
-        nev = maxevent;
+      if (startevent+maxevent <= nev) {
+        nev = startevent+maxevent;
+      }
+      else{
+        cout << "Maximum number of events is " << nev << endl;
+        return;
       }
       Int_t iev = 0;
       hfft[kch] = (TH1D*)w->hfft->Clone(Form("hfft_%s_ch%d",myname.c_str(),kch));
       hfft[kch]->Reset();
       cout << "\n";
       Int_t total = 0;
-      for(Int_t i = 0; i < nev; i++){
+      for(Int_t i = startevent; i < nev; i++){
         iev = lev->GetEntry(i);
         printev(i,nev);
         getWaveform(iev,kch);

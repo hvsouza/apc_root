@@ -540,7 +540,8 @@ class WIENER{
       re_comp = new Double_t[npts];
       im_comp = new Double_t[npts];
       res = new Double_t[npts];
-      factor = 1./(npts); // there is a factor 2 here, but root will not like it
+      factor = 1./sqrt(npts); // tested and working fine to compare between different time windows
+      // factor = 1./sqrt(npts); // there is a factor 2 here, but root will not like it
   
     
       if(units_step == 1e-9)

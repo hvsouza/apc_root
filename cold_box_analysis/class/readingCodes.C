@@ -341,8 +341,15 @@ class Read{
         else
         {
           found = found + wave_ref.length();
-          wavenum = (int)dataname[found] - '0';
-          // cout << wavenum << endl;
+          string subdataname = dataname.substr(found);
+          size_t underscorePos = subdataname.find("_");
+          std::string channelNumberString = underscorePos != std::string::npos ? subdataname.substr(0, underscorePos) : subdataname;
+          // wavenum = (int)dataname[found] - '0';
+          try {
+            wavenum = std::stoi(channelNumberString);
+          } catch (std::invalid_argument const& e) {
+            std::cerr << "Invalid channel number format in file: " << dataname << std::endl;
+          }
           if(wavenum != temp){
             if (aux == 0) temp = wavenum;
             tempch.push_back(wavenum);
@@ -667,7 +674,7 @@ class Read{
               else fin[i] >> temp;
               // cout << timestamp << " " << temp << endl;
               if(fin[i].bad() || fin[i].fail()){
-                cout << "going ... ";
+                cout << "goodbye... ";
                 break;
               }
               n_reads++;
