@@ -160,7 +160,9 @@ void create_histograms_ch1(){
     // Double_t aux_arror_std = fga[i]->GetParError(2);
     
     
-    Eravgs[i] = sqrt(pow(aux_arror_avgs,2)+pow(ErSTD[i],2)/h[i]->GetEntries());
+    // Eravgs[i] = sqrt(pow(aux_arror_avgs,2)+pow(ErSTD[i],2)/* /h[i]->GetEntries() */);
+    Eravgs[i] =ErSTD[i];
+    // Eravgs[i] =ErSTD[i]/sqrt(avgs[i]);
     Erpeak[i] = sqrt(pow(aux_arror_peak,2)+pow(sigma_peak[i],2)/hpeak[i]->GetEntries());
 
     sigma_mu[i] = 100*ErSTD[i]/avgs[i];
