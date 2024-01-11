@@ -88,14 +88,17 @@ class ANALYZER{
 
       if(thead == nullptr)
       {
-        try {
-          thead = (TTree*)f->Get("head");
-          Double_t dtused;
-          thead->SetBranchAddress("dtime", &dtused);
-          thead->GetEntry(0);
-          dtime = dtused;
-        } catch (std::invalid_argument const& e) {
-          std::cerr << "Could not set dtime" << std::endl;
+        bool has_head = false;
+        for (auto fkey: *f->GetListOfKeys()){
+          if (string(fkey->GetName()) == "head")
+          {
+            thead = (TTree*)f->Get("head");
+            Double_t dtused;
+            thead->SetBranchAddress("dtime", &dtused);
+            thead->GetEntry(0);
+            dtime = dtused;
+            break;
+          }
         }
       }
 
