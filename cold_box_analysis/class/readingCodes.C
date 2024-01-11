@@ -446,6 +446,7 @@ class Read{
       string rootfile;
       TFile *f1;
       TTree *t1;
+      TTree *thead;
       if(isBinary) hbase = new TH1D("hbase","finding baseline",TMath::Power(2,basebits),0,TMath::Power(2,nbits));
       else hbase = new TH1D("hbase","finding baseline",1000,-1,1);
       Double_t tEvent = 0;
@@ -493,8 +494,20 @@ class Read{
           for(Int_t i = 0; i < (int)channels.size(); i++){
             bch[i] = t1->Branch(Form("Ch%i.",channels[i]),&ch[i]);
           }
-        
-        
+
+          thead = new TTree("head","header");
+          thead->Branch("dtime", &dtime);
+          thead->Branch("startcharge", &startCharge);
+          thead->Branch("endcharge", &chargeTime);
+          thead->Branch("baselineTime", &baselineTime);
+          thead->Branch("maxRange", &maxRange);
+          thead->Branch("fast_time", &fast);
+          thead->Branch("slow_time", &slow);
+          thead->Branch("exclusion_baselines", &exclusion_baselines);
+          thead->Branch("exclusion_window", &exclusion_window);
+          thead->Branch("filter", &filter);
+          thead->Fill();
+
           f1->Write();
         
           f1->Close();

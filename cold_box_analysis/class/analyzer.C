@@ -13,6 +13,7 @@ class ANALYZER{
 
     TFile *f = nullptr;
     TTree *t1 = nullptr;
+    TTree *thead = nullptr;
     Int_t nentries = 0;
     vector<TBranch*> b;
     vector<ADC_DATA*> ch;
@@ -68,6 +69,7 @@ class ANALYZER{
       if(f == nullptr) f = new TFile(filename.c_str(),"READ");
       if(t1 == nullptr) t1 = (TTree*)f->Get("t1");
       TList *lb = (TList*)t1->GetListOfBranches();
+
       if(lev==nullptr) lev = new TEventList(Form("lev_%s",myname.c_str()),Form("lev_%s",myname.c_str()));
       // branch title of new data format is equal to "ChX."
       // while for the old one, it is equal to `tobranch` string
@@ -82,6 +84,20 @@ class ANALYZER{
       schannel.resize(nchannels);
       channels.resize(nchannels);
       ch.resize(nchannels);
+
+
+      if(thead == nullptr)
+      {
+        try {
+          thead = (TTree*)f->Get("head");
+          Double_t dtused;
+          thead->SetBranchAddress("dtime", &dtused);
+          thead->GetEntry(0);
+          dtime = dtused;
+        } catch (std::invalid_argument const& e) {
+          std::cerr << "Could not set dtime" << std::endl;
+        }
+      }
 
       for (Int_t i = 0; i < nchannels; i++) {
         schannel[i] = lb->At(i)->GetName();
