@@ -97,6 +97,7 @@ class ANALYZER{
             thead->SetBranchAddress("dtime", &dtused);
             thead->GetEntry(0);
             dtime = dtused;
+            thead->ResetBranchAddresses();
             break;
           }
         }
@@ -160,7 +161,9 @@ class ANALYZER{
 
     void setEmpty(){
       string wienername = myname + "_w";
-      if(!w) w = new WIENER(wienername.c_str(),dtime,250,1e-9,1e6,n_points);
+      if(!w){
+        w = new WIENER(wienername.c_str(),dtime,1./dtime/1e-9/1e6,1e-9,1e6,n_points);
+      }
       raw.resize(nchannels);
       wvf.resize(nchannels);
       haverage.resize(nchannels);
@@ -225,6 +228,9 @@ class ANALYZER{
       h = w->hfft;
     }
 
+    Double_t compute_true_baseline(Double_t baseline, Double_t offset){
+      return (baseline/pow(2,14) - offset)*2000;
+    }
     Double_t getMean(Double_t from, Double_t to){
       if (from == to) return 0;
       Double_t res = 0;
@@ -322,6 +328,19 @@ class ANALYZER{
       }
     }
 
+    void gen_fall_time(Int_t channel = 0, vector<Double_t> baseline_range = {0,0}, Bool_t ispulse = true, vector<Double_t> peak_range = {0,0}, Double_t filter = 0, TH1D *htemp = nullptr, string selection = ""){
+      getSelection(selection);
+      kch = channel;
+      htemp->GetYaxis()->SetTitle("# of events");
+      htemp->GetXaxis()->SetTitle("Fall time_{90} (ns)");
+
+      for(Int_t i = 0; i < lev->GetN(); i++){
+        getWaveform(lev->GetEntry(i),kch);
+        applyDenoise(filter);
+        Double_t val = fall_time(kch, baseline_range, ispulse, peak_range);
+        htemp->Fill(val);
+      }
+    }
     Double_t linear_interpole_tot(Int_t i, Double_t th){
       if (i - 1 < 0) {
         return i;
@@ -542,7 +561,39 @@ class ANALYZER{
           return temp_pos - time_mark;
         }
       }
-      if(debug) draw_rise_lines(time_mark, 0, baseline_level, peak_level);
+      return 0;
+    }
+
+    Double_t fall_time(Int_t channel = 0, vector<Double_t> baseline_range = {0,0}, Bool_t ispulse = true, vector<Double_t> peak_range = {0,0}, bool debug = false){
+      kch = channel;
+      Double_t baseline_level = getMean(baseline_range[0],baseline_range[1]);
+
+      Double_t peak_level = 0;
+      if (ispulse){
+        peak_level = getMaximum(peak_range[0],peak_range[1]);
+      }
+      else{
+        peak_level = getMean(peak_range[0],peak_range[1]);
+      }
+      Int_t startpoint = temp_pos;
+      Int_t endpoint = peak_range[1]/dtime;
+      Bool_t triggered = false;
+      Double_t time_mark = 0;
+
+      for(Int_t i = startpoint; i < endpoint; i++){
+        if (ch[kch]->wvf[i] <= 0.9*(peak_level-baseline_level)+baseline_level && triggered==false) {
+          triggered = true;
+          time_mark = linear_interpole_tot(i, 0.9*(peak_level-baseline_level))*dtime;
+          // time_mark = i*dtime;
+        }
+        else if(triggered == true && ch[kch]->wvf[i]<=0.1*(peak_level - baseline_level)+baseline_level){
+          if(debug) draw_rise_lines(time_mark, i*dtime, baseline_level, peak_level);
+          temp_pos = linear_interpole_tot(i, 0.1*(peak_level - baseline_level))*dtime;
+          // time_mark = i*dtime - time_mark;
+          temp_max = peak_level;
+          return temp_pos - time_mark;
+        }
+      }
       return 0;
     }
 
@@ -699,6 +750,43 @@ class ANALYZER{
 
       }
 
+    }
+
+
+    void getSPEIntervals(Double_t clockstart,
+                         Double_t clockperiod,
+                         Double_t integration_time,
+                         string selection = "",
+                         Double_t filter = 0,
+                         Double_t percent = 0){
+                         // Double_ clockbaseline = 0,
+                         // Double_t baseline_time = 0,
+                         // Double_t exclusion_baseline = 0,
+                         // Double_t exclusion_window = 0,
+                         // Double_t validfraction = 3.,
+                         // TH1D *hbase = nullptr){
+      getSelection(selection);
+      Int_t nev = lev->GetN();
+      Int_t iev = 0;
+      Double_t from = 0;
+      Double_t to = 0;
+      for(Int_t i = 0; i < nev; i++){
+        cout << i << " out of " << nev << "\r" << flush;
+        iev = lev->GetEntry(i);
+        getWaveform(iev,kch);
+        applyDenoise(filter);
+        from = clockstart;
+        to = clockstart + integration_time;
+        while(from < n_points*dtime && to < n_points*dtime){
+          integrate(from, to, percent);
+          h->Fill(temp_charge);
+          // cout << from << " " << to << " " << temp_charge << endl;
+          from += clockperiod;
+          to = from + integration_time;
+        }
+      }
+      TFile *fout = new TFile(Form("sphe_histograms_Ch%i.root",kch),"RECREATE");
+      fout->WriteObject(h,"analyzed","TObject::kOverwrite");
     }
     // _________________________ _____________________________ _________________________ //
 
