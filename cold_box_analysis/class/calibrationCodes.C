@@ -148,6 +148,7 @@ class Calibration
 
 
     Bool_t drawDebugLines = false;
+    Bool_t show_all_parameters = false;
   
   
     // ____________________________________________________________________________________________________ //
@@ -391,8 +392,14 @@ class Calibration
       // c1->SetLogy();
       gPad->SetGrid(1,1);
       gPad->SetTicks(1,1);
-      gStyle->SetOptFit();
-    
+      if (show_all_parameters){
+        gStyle->SetOptFit(1111);
+      }
+      else{
+        gStyle->SetOptFit(0);
+        gStyle->SetOptStat(0);
+      }
+
       //First function, will almost fit freely
       TF1 *func = new TF1("func",startingPump().c_str(),xmin,xmax);
       TF1 *fu[2+n_peaks];
@@ -512,7 +519,6 @@ class Calibration
         aux=aux+2;
       }
 
-    
       lastOne->SetParName(0,"A_{baseline}");
       lastOne->SetParName(1,"#mu_{baseline}");
       lastOne->SetParName(2,"#sigma_{baseline}");
@@ -744,7 +750,8 @@ class Calibration
         cout << "\n\n\n Another possibility would be CT = " << (twoIntegral+threeIntegral)/(oneIntegral+twoIntegral+threeIntegral) << endl;
         
         // ____________________________ Finish Poisson analysis ____________________________ //
-        
+
+
       }
     
     
@@ -816,6 +823,38 @@ class Calibration
         //         cout << "teste -> " << hcharge->GetMean() << endl;
         // ____________________________ Finish Poisson analysis ____________________________ //
       }
+      // ____________________________ Draw legend by hand ____________________________ //
+
+      if (show_all_parameters) return;
+      TPaveText *pleg = new TPaveText(0.74,0.29,0.89,0.89, "NDC");
+      pleg->SetFillColor(0);
+      pleg->SetBorderSize(1);
+      TText *ltext = nullptr;
+      pleg->SetTextFont(42);
+      pleg->SetTextSize(0.03);
+      pleg->SetTextAlign(11);
+      ltext = pleg->AddText("SPE Calibration");
+      ltext->SetTextFont(62);
+      ltext->SetTextAlign(22);
+      ltext = pleg->AddText(" ");
+      ltext = pleg->AddText(Form("Entries: %.0f", hcharge->GetEntries()));
+      ltext = pleg->AddText(Form("Mean: %.2f", hcharge->GetMean()));
+      ltext = pleg->AddText(Form("Std Dev: %.2f", hcharge->GetStdDev()));
+      ltext = pleg->AddText(Form("#chi^{2} / ndf: %.2f/%d", lastOne->GetChisquare(), lastOne->GetNDF()));
+      ltext = pleg->AddText(Form("Fitted gaussians: %d", n_peaks+2));
+      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(0),lastOne->GetParameter(0), lastOne->GetParError(0)));
+      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(1),lastOne->GetParameter(1), lastOne->GetParError(1)));
+      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(2),lastOne->GetParameter(2), lastOne->GetParError(2)));
+      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(3),lastOne->GetParameter(3), lastOne->GetParError(3)));
+      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(4),lastOne->GetParameter(4), lastOne->GetParError(4)));
+      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(5),lastOne->GetParameter(5), lastOne->GetParError(5)));
+      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(6),lastOne->GetParameter(6), lastOne->GetParError(6)));
+      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(7),lastOne->GetParameter(7), lastOne->GetParError(7)));
+      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(8),lastOne->GetParameter(8), lastOne->GetParError(8)));
+
+      // ((TText*)pleg->GetListOfLines()->Last())->SetTextAlign(23);
+      pleg->Draw();
+      // ____________________________ FinishDraw legend by hand ____________________________ //
     }
 
     void setParametersFree(TF1 *lastOneFree, TF1 *lastOne){
@@ -846,9 +885,9 @@ class Calibration
       }
 
 
-      lastOneFree->SetParName(0,"A_{baseline}");
-      lastOneFree->SetParName(1,"#mu_{baseline}");
-      lastOneFree->SetParName(2,"#sigma_{baseline}");
+      lastOneFree->SetParName(0,"A_{b}");
+      lastOneFree->SetParName(1,"#mu_{b}");
+      lastOneFree->SetParName(2,"#sigma_{b}");
       lastOneFree->SetParName(3,"A_{1}");
       lastOneFree->SetParName(4,"#mu_{1}");
       lastOneFree->SetParName(5,"#sigma_{1}");
@@ -922,8 +961,8 @@ class SPHE2{
 
     Double_t timeLow         = 60;   // integration time before peak (not used for led)
     Double_t timeHigh        = 400;  // integration time after peak (not used for led)
-    Double_t lowerThreshold  = -1;   // threshold to detect noise (normal waveform) (not used for led)
-    Double_t maxHits         = 1;    // maximum hit before discarding   (not used for led)
+    Double_t lowerThreshold  = -1e12;   // threshold to detect noise (normal waveform) (not used for led)
+    Double_t maxHits         = 1e12;    // maximum hit before discarding   (not used for led)
     Double_t too_big         = 1000; // if there is a peak > "too_big" .. wait "waiting" ns for next peak
     Double_t waiting         = 1000;
     Double_t filter          = 14;   // one dimentional denoise filter (0 equal no filder)
@@ -944,14 +983,15 @@ class SPHE2{
     Double_t spe_max_val_at_time_cut = 20; // after `time_cut`, the signal cannot be higher than this
                                            // this allows to remove after pulses
     Double_t time_cut = 2000; // in ns seconds
+    Bool_t cut_with_filtered = true; // will cut using filtered waveform
 
     // coeficients to surround gaussian of 1 spe.
     // Gain             = (sphe_charge2 - sphe_charge)
     // spe's get events where charge < Gain*deltaplus  and charge < Gain/deltaminus
     // If deltaminus is set to zero, sphe_std*deltaplus will be used instead
     // This value can be checked with fit_sphe.C
-    Double_t deltaplus  = 1.3;
-    Double_t deltaminus = 1.5;
+    Double_t deltaplus  = 1;
+    Double_t deltaminus = 0;
 
 
     // Not so common to change
@@ -984,6 +1024,8 @@ class SPHE2{
     TTree    *twvf   = nullptr; // tree of waveforms
 
     ADC_DATA sample; // will store the waveforms found
+    Double_t *sample_wvf_filtered; // for applying cut with filted wvf
+
 
     string myname; // name of the declared class
     Bool_t derivate = false; // control if user has set to derivate
@@ -1081,7 +1123,8 @@ class SPHE2{
       gROOT->SetBatch(kTRUE);
 
       hcharge->Reset();
-      hcharge->SetBins(hnbins, hxmax, hxmin);
+      if (hxmax != 0 && hxmin != 0)
+        hcharge->SetBins(hnbins, hxmin, hxmax);
       rootfile = filename + ".root";
 
       if(!z){ // load analyzer in case it is nullptr
@@ -1125,6 +1168,7 @@ class SPHE2{
       naverages = 0;
 
       sample.Set_npts(npts_wvf);
+      sample_wvf_filtered = new Double_t[npts_wvf];
       if (get_wave_form) twvf->Branch(Form("Ch%i.",channel),&sample);
 
 
@@ -1214,6 +1258,7 @@ class SPHE2{
             }
           }
         } // draw sample graphs
+        
       }
       cout << "\n\n" << endl;
 
@@ -1231,6 +1276,10 @@ class SPHE2{
 
         TGraph *gmean = new TGraph(npts_wvf,timeg,&mean_waveform[0]);
         fwvf->WriteObject(gmean,"mean","TObject::kOverwrite");
+        if (z->thead){
+          auto newtree = z->thead->CloneTree();
+          fwvf->WriteObject(newtree,"head","TObject::kOverwrite");
+        }
         cout << "A total of " << naverages << " waveforms where found "<< endl;
       }
 
@@ -1516,7 +1565,7 @@ class SPHE2{
             sample.selection = 1;
             for(Int_t j = 0; j < npts_wvf; j++){
               mean_waveform[j] += sample.wvf[j];
-              if(j*dtime >= time_cut && sample.wvf[j] >= spe_max_val_at_time_cut){
+              if(j*dtime >= time_cut && ((!cut_with_filtered && sample.wvf[j] >= spe_max_val_at_time_cut) || (cut_with_filtered && sample_wvf_filtered[j] >= spe_max_val_at_time_cut))){
                 sample.selection = 2;
                 for(Int_t k = j; k >= 0; k--){
                   mean_waveform[k] -= sample.wvf[k];
@@ -1573,6 +1622,7 @@ class SPHE2{
         Double_t val = denoise_wvf[i];
         if(get_this_wvf){
           sample.wvf[iwvf] = z->ch[kch]->wvf[i];
+          sample_wvf_filtered[iwvf] = val;
         }
         if(i >= integralfrom && i <= integralto){
           if (val < lowerThreshold){
