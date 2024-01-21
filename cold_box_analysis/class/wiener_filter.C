@@ -433,7 +433,7 @@ class WIENER{
       TH1 *hfinal = 0;
       //Let's look at the output
       hfinal = TH1::TransformHisto(fft_final,hfinal,"Ref");
-      // hfinal->Scale(factor); // you dont scale to get back ...
+      hfinal->Scale(factor);
 
 
       hwvf->Reset();
