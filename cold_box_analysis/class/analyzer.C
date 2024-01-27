@@ -105,7 +105,22 @@ class ANALYZER{
 
       for (Int_t i = 0; i < nchannels; i++) {
         schannel[i] = lb->At(i)->GetName();
-        channels[i] = schannel[i][2] - '0';
+        // Find the position of the first digit
+        size_t digitPos = schannel[i].find_first_of("0123456789");
+
+        // If a digit is found, extract the numeric part
+        if (digitPos != std::string::npos) {
+          // Use substr to get the numeric part from the string
+          std::string numberString = schannel[i].substr(digitPos);
+
+          // Convert the substring to an integer
+          try {
+            channels[i] =  std::stoi(numberString);
+          } catch (const std::invalid_argument& e) {
+            // Handle the case where conversion to integer fails
+            std::cerr << "Error: " << e.what() << std::endl;
+          }
+        }
         ch[i] = new ADC_DATA();
         string temp_ch_name = schannel[i];
         b[i] = t1->GetBranch(temp_ch_name.c_str());
@@ -785,7 +800,7 @@ class ANALYZER{
           to = from + integration_time;
         }
       }
-      TFile *fout = new TFile(Form("sphe_histograms_Ch%i.root",kch),"RECREATE");
+      TFile *fout = new TFile(Form("sphe_histograms_Ch%i.root",channels[kch]),"RECREATE");
       fout->WriteObject(h,"analyzed","TObject::kOverwrite");
     }
     // _________________________ _____________________________ _________________________ //
