@@ -792,7 +792,7 @@ class ANALYZER{
         applyDenoise(filter);
         from = clockstart;
         to = clockstart + integration_time;
-        while(from < n_points*dtime && to < n_points*dtime){
+        while(from < n_points*dtime && to < n_points*dtime && to < xmax){
           integrate(from, to, percent);
           h->Fill(temp_charge);
           // cout << from << " " << to << " " << temp_charge << endl;
