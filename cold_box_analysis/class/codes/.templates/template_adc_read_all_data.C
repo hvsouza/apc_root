@@ -14,7 +14,7 @@ void adc_read_all_data(string datadir = "./"){
     if(datadir[datadirlength-1] != '/'){
         datadir = datadir + "/";
     }
-    string packdata = Form("ls -1 %s*.dat | sed -e 's/.dat$//' > files.log", datadir.c_str());
+    string packdata = Form("ls -1 -v %s*.dat | sed -e 's/.dat$//' > files.log", datadir.c_str());
     // string packadata = Form("ls -1 %s*.dat | grep wave | sed -e 's/.dat$//' > files.log", datadir.c_str()); // to only check one channel
     // string packadata = Form("ls -1 %s*.dat | grep wave[2,3] | sed -e 's/.dat$//' > files.log", datadir.c_str()); // to only check channels 2 and 3
     system(packdata.c_str());
@@ -33,6 +33,9 @@ void adc_read_all_data(string datadir = "./"){
     r.slow = 1700; //fprompt slow integration time
     r.exclusion_baseline = 35; // filtered waveform (ADCs), anything above here will do +exclusion window while evaluating the baseline
     // r.exclusion_baselines = {35,15};
+
+    // One can also use the map for exclusion baseline:
+    // r.map_exclusion_threshold_baselines = {{"Ch0.", 10}, {"Ch7.", 11}, {"Ch10.", 11}, {"Ch17.", 9}, {"Ch20.", 9}, {"Ch27.", 12}, {"Ch30.", 10}, {"Ch37.", 10},};
     r.exclusion_window = 1000; // time in ns that it will jump for baseline
     r.filter = 14; // denoise filter.. if filter = 0, no denoise is done.
     r.OnlySomeEvents = false; // Do you want only a few events? Choose it wisely (you can set stopEvent)

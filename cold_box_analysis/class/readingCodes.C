@@ -250,6 +250,7 @@ class Read{
     // Bool_t noBaseline=true;
     vector<Int_t> channels = {1,2};
     vector<Double_t> exclusion_baselines = {30};
+    map<string, Double_t> map_exclusion_threshold_baselines = {{"none",0}};
     vector<vector<Double_t>> charge_start_finish;
 
     Int_t nfiles = 1;
@@ -293,6 +294,7 @@ class Read{
     void reset_vector(vector<Double_t> &val){
       Int_t nchannels = (int)channels.size();
       Int_t noriginal = (int)val.size();
+      vector<Double_t> tmp(val);
       if (noriginal > nchannels){
         if (noriginal-1 >= channels[nchannels-1]){
           for (Int_t j = 0; j < nchannels; j++) {
@@ -768,12 +770,27 @@ class Read{
               ch[i]->wvf[l] = filtered[l];
             }
           }
-          if(exclusion_baselines.size() != 1){
-            exclusion_baseline = exclusion_baselines[i];
+          auto mapIter = map_exclusion_threshold_baselines.find("none");
+          if (mapIter != map_exclusion_threshold_baselines.end()){
+            if(exclusion_baselines.size() != 1){
+              exclusion_baseline = exclusion_baselines[i];
+            }
+            else if (exclusion_baselines.size() == 1){
+              exclusion_baseline = exclusion_baselines[0];
+            }
           }
-          else if (exclusion_baselines.size() == 1){
-            exclusion_baseline = exclusion_baselines[0];
+          else{
+            mapIter = map_exclusion_threshold_baselines.find(Form("Ch%d.",channels[i]));
+            if (mapIter == map_exclusion_threshold_baselines.end()){
+              cout << "WARNING!!! " << channels[i] << " not found in baseline map.. using: " << exclusion_baselines[0] << endl;
+              exclusion_baseline = exclusion_baselines[0];
+            }
+            else{
+              exclusion_baseline = mapIter->second;
+            }
+
           }
+          // cout << "kch = " << i << " " << channels[i] << " baseline = " << exclusion_baseline << endl;
           bl = baseline(filtered,ch[i]->selection,i,tEvent);
           // bl = baseline(ch[i]->wvf,ch[i]->selection,i,tEvent);
           // if(bl==-9999) cout << i << " " << tEvent << endl;
