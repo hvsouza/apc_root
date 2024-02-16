@@ -50,35 +50,7 @@ void ANALYZER::showWaveform(Int_t maxevent, Double_t filter, Int_t dt){
 
 void ANALYZER::persistence_plot(Int_t nbins, Double_t ymin, Double_t ymax, Double_t filter, string cut, Double_t factor){
 
-  Int_t nbinsx = (xmax-xmin)/dtime;
-  if(!hpers) hpers = new TH2D("hpers","hpers",nbinsx,xmin,xmax,nbins,ymin,ymax);
-  else{
-    hpers->Reset();
-    hpers->SetBins(nbinsx, xmin, xmax, nbins, ymin, ymax);
-  }
-  if(!cpers) cpers = new TCanvas(Form("cpers_%s", myname.c_str()), Form("cpers_%s", myname.c_str()),1920,0,1920,1080);
-  else{cpers->cd();}
-
-
-
-  getSelection(cut);
-  Int_t nev = lev->GetN();
-  Int_t iev = 0;
-
-  for(Int_t i = 0; i < nev; i++){
-
-    printev(i,nev);
-    iev = lev->GetEntry(i);
-    getWaveform(iev,kch);
-    applyDenoise(filter);
-    // applyFreqFilter();
-
-    for (int j = 0; j < n_points; j++) {
-      hpers->Fill(j*dtime,ch[kch]->wvf[j]*factor);
-    }
-
-  }
-  cout << "\n";
+  create_persistence(nbins, ymin, ymax, filter, cut, factor);
 
   hpers->SetStats(kFALSE);
   hpers->Draw("colz");
@@ -454,9 +426,9 @@ void ANALYZER::check_filtering(vector<Int_t> filter_max_and_step, Int_t event, I
       href = (TH1D*)h->Clone("href");
     }
     hnf_fft[i]->Divide(hnf_fft[i], href);
-    for(Int_t j = 0; j < hnf_fft[i]->GetNbinsX(); j++){
-      hnf_fft[i]->SetBinContent(j+1, 20*log10(hnf_fft[i]->GetBinContent(j+1)));
-    }
+    // for(Int_t j = 0; j < hnf_fft[i]->GetNbinsX(); j++){
+    //   hnf_fft[i]->SetBinContent(j+1, 20*log10(hnf_fft[i]->GetBinContent(j+1)));
+    // }
     hnf_fft[i]->SetTitle(Form("Filter = %d", filter));
     hnf_fft[i]->Rebin(rebine);
     hs->Add(hnf_fft[i],"hist");
@@ -471,9 +443,9 @@ void ANALYZER::check_filtering(vector<Int_t> filter_max_and_step, Int_t event, I
   getFFT();
   TH1D *hlow_fft = (TH1D*)h->Clone(Form("Low pass %0.f MHz", refFreq));
   hlow_fft->Divide(hlow_fft, href);
-  for(Int_t j = 0; j < hlow_fft->GetNbinsX(); j++){
-    hlow_fft->SetBinContent(j+1, 20*log10(hlow_fft->GetBinContent(j+1)));
-  }
+  // for(Int_t j = 0; j < hlow_fft->GetNbinsX(); j++){
+  //   hlow_fft->SetBinContent(j+1, 20*log10(hlow_fft->GetBinContent(j+1)));
+  // }
   hlow_fft->SetTitle(Form("Low pass %0.f MHz", refFreq));
   hlow_fft->Rebin(rebine);
   hlow_fft->SetLineColor(kRed);
