@@ -20,7 +20,7 @@ class ANALYZER{
     Int_t nchannels = 1;
     vector<Int_t> channels = {1,2};
     vector<string> schannel;
-    Double_t dtime = 4;
+    Double_t dtime = 2;
     string myname;
     string filename = "analyzed.root";
     TEventList *lev = nullptr;
@@ -56,6 +56,7 @@ class ANALYZER{
     Double_t temp_min = 0;
     Double_t temp_pos = 0;
     Double_t temp_pos_min = 0;
+    Double_t temp_dummy = 0;
 
     TCanvas *cpers = nullptr;
 
@@ -264,7 +265,7 @@ class ANALYZER{
         if(v[i]>max){
           max = v[i];
           temp_max = max;
-          temp_pos = i;
+          temp_pos = i*dtime;
         }
       }
       return max;
@@ -396,6 +397,7 @@ class ANALYZER{
           res += ch[kch]->wvf[i];
           if(ch[kch]->wvf[i]>=max){
             max = ch[kch]->wvf[i];
+            temp_pos = i*dtime;
           }
 
         }
@@ -441,6 +443,39 @@ class ANALYZER{
         integrate(from, to, percent);
         _htemp->Fill(temp_charge/sphe);
       }
+    }
+
+
+    void cumulative_integral(vector<Double_t> &output, Double_t from = 0, Double_t to = 0){
+      Double_t res = 0;
+      Double_t max = -1e12;
+      Double_t maxcharge = -1e12;
+      Int_t idxmaxcharge = 0;
+      Double_t pos = 0;
+      if (to == 0) to = n_points*dtime;
+      output.resize(n_points);
+      // Assigns value 0 to all the elements in the vector
+      std::fill(output.begin(), output.end(), 0);
+      for(Int_t i = from/dtime; i < to/dtime; i++){
+        res += ch[kch]->wvf[i]*dtime;
+        output[i] = res;
+        if(ch[kch]->wvf[i]>=max){
+          max = ch[kch]->wvf[i];
+          pos = i*dtime;
+        }
+        if(res >= maxcharge){
+          maxcharge = res;
+          idxmaxcharge = i;
+        }
+      }
+      temp_charge = res;
+      temp_max = max;
+      temp_pos = pos;
+
+      for (Int_t i = 0; i < (Int_t)output.size(); i++){
+        output[i] = output[i]/output[idxmaxcharge];
+      }
+
     }
 
     void exportAsHistogram(TH1D *hexport = nullptr, Double_t x_start = 0){
@@ -549,6 +584,7 @@ class ANALYZER{
     Double_t rise_time(Int_t channel = 0, vector<Double_t> baseline_range = {0,0}, Bool_t ispulse = true, vector<Double_t> peak_range = {0,0}, bool debug = false){
       kch = channel;
       Double_t baseline_level = getMean(baseline_range[0],baseline_range[1]);
+      temp_dummy = baseline_level;
 
       Double_t peak_level = 0;
       if (ispulse){
@@ -582,6 +618,7 @@ class ANALYZER{
     Double_t fall_time(Int_t channel = 0, vector<Double_t> baseline_range = {0,0}, Bool_t ispulse = true, vector<Double_t> peak_range = {0,0}, bool debug = false){
       kch = channel;
       Double_t baseline_level = getMean(baseline_range[0],baseline_range[1]);
+      temp_dummy = baseline_level;
 
       Double_t peak_level = 0;
       if (ispulse){
@@ -785,8 +822,9 @@ class ANALYZER{
       Int_t iev = 0;
       Double_t from = 0;
       Double_t to = 0;
+      int count = 0;
       for(Int_t i = 0; i < nev; i++){
-        cout << i << " out of " << nev << "\r" << flush;
+        printev(i, nev);
         iev = lev->GetEntry(i);
         getWaveform(iev,kch);
         applyDenoise(filter);
@@ -798,10 +836,45 @@ class ANALYZER{
           // cout << from << " " << to << " " << temp_charge << endl;
           from += clockperiod;
           to = from + integration_time;
+          count+=1;
         }
       }
+      cout << "\n";
       TFile *fout = new TFile(Form("sphe_histograms_Ch%i.root",channels[kch]),"RECREATE");
       fout->WriteObject(h,"analyzed","TObject::kOverwrite");
+    }
+
+
+    
+    void create_persistence(Int_t nbins, Double_t ymin, Double_t ymax, Double_t filter, string cut, Double_t factor){
+
+      Int_t nbinsx = (xmax-xmin)/dtime;
+      if(!hpers) hpers = new TH2D("hpers","hpers",nbinsx,xmin,xmax,nbins,ymin,ymax);
+      else{
+        hpers->Reset();
+        hpers->SetBins(nbinsx, xmin, xmax, nbins, ymin, ymax);
+      }
+      if(!cpers) cpers = new TCanvas(Form("cpers_%s", myname.c_str()), Form("cpers_%s", myname.c_str()),1920,0,1920,1080);
+      else{cpers->cd();}
+
+      getSelection(cut);
+      Int_t nev = lev->GetN();
+      Int_t iev = 0;
+
+      for(Int_t i = 0; i < nev; i++){
+
+        printev(i,nev);
+        iev = lev->GetEntry(i);
+        getWaveform(iev,kch);
+        applyDenoise(filter);
+        // applyFreqFilter();
+
+        for (int j = 0; j < n_points; j++) {
+          hpers->Fill(j*dtime,ch[kch]->wvf[j]*factor);
+        }
+
+      }
+      cout << "\n";
     }
     // _________________________ _____________________________ _________________________ //
 
@@ -1002,7 +1075,7 @@ class ANALYZER{
       delete ttemp;
     }
 
-    void selectByAmplitude(Double_t filter = 0, Double_t xmin = 0, Double_t xmax = 0, Double_t limit = 100, string type = "higher"){
+    void excludeByAmplitude(Double_t filter = 0, Double_t xmin = 0, Double_t xmax = 0, Double_t limit = 100, string type = "higher"){
       f->cd();
       lev = (TEventList*)gDirectory->Get(Form("lev_%s",myname.c_str()));
       if(lev->GetN() == 0){
