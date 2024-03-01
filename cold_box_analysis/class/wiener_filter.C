@@ -191,9 +191,9 @@ class WIENER{
       if(max==0){
         max = htemp->GetMaximum();
       }
-      // cout << max << endl;
       Int_t ntemp = htemp->GetEntries();
       for(Int_t k=0; k<npts/2+1; k++){
+        // cout << htemp->GetBinContent(k+1) << endl;
         htemp->SetBinContent(k+1,20*TMath::Log10(htemp->GetBinContent(k+1)/max));
       }
       htemp->SetEntries(ntemp);
@@ -369,8 +369,8 @@ class WIENER{
 
 
     void idx_recompt(Int_t k){
-        hfft->SetBinContent(k+1,2*spec[k].Rho()); // factor 2 only for histogram
-        hPSD->SetBinContent(k+1,spec[k].Rho2());
+        hfft->SetBinContent(k+1,spec[k].Rho()); // correction for plot
+        hPSD->SetBinContent(k+1,spec[k].Rho2()/2.);
     }
     void recompute_hist(){
       for(Int_t k = 0; k<npts/2+1; k++){
@@ -433,13 +433,13 @@ class WIENER{
       TH1 *hfinal = 0;
       //Let's look at the output
       hfinal = TH1::TransformHisto(fft_final,hfinal,"Ref");
-      hfinal->Scale(factor);
+      // hfinal->Scale(factor);
 
 
       hwvf->Reset();
       for(Int_t i = 0; i<npts; i++){
         res[i] = hfinal->GetBinContent(i+1);
-        hwvf->SetBinContent(i+1,res[i]);
+        hwvf->SetBinContent(i+1,res[i]/2); // need to correct a sqrt(2) factor that comes around :/
       }
 
       fft(hwvf);
@@ -540,9 +540,9 @@ class WIENER{
       re_comp = new Double_t[npts];
       im_comp = new Double_t[npts];
       res = new Double_t[npts];
-      factor = 1./sqrt(npts); // tested and working fine to compare between different time windows
-      // factor = 1./sqrt(npts); // there is a factor 2 here, but root will not like it
-  
+      factor = 1./(npts/2.); // tested and working fine to compare between different time windows
+      // on the histograms, a factor 2 is added to match the usual normalization (root does not like this, so I keep complex numbers without)
+
     
       if(units_step == 1e-9)
         unit_time = "ns";
@@ -571,8 +571,8 @@ class WIENER{
 
       hfft->GetXaxis()->SetTitle(Form("Frequency (%s)",unit_freq.c_str()));
       hPSD->GetXaxis()->SetTitle(Form("Frequency (%s)",unit_freq.c_str()));
-      hfft->GetYaxis()->SetTitle("Magnitude");
-      hPSD->GetYaxis()->SetTitle("PSD (Magnitude^{2} Hz^{-1})");
+      hfft->GetYaxis()->SetTitle("ADC");
+      hPSD->GetYaxis()->SetTitle("PSD (ADC^{2} Hz^{-1})");
 
       hwvf->GetXaxis()->SetTitle(Form("Time (%s)",unit_time.c_str()));
       hwvf->GetYaxis()->SetTitle("Amplitude (A.U.)");
