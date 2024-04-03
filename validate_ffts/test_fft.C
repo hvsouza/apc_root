@@ -19,6 +19,7 @@ void create_wvf(ANALYZER &z, Int_t npts, Double_t step, Double_t freq, Double_t 
   for (Int_t i = 0; i < npts; i++){
     Double_t rnd = gRandom->Gaus(0,20);
 
+    z.ch[0]->wvf[i]  = rnd;
     z.time[i] = i*z.dtime;
   }
 
@@ -26,14 +27,16 @@ void create_wvf(ANALYZER &z, Int_t npts, Double_t step, Double_t freq, Double_t 
 
   z.getFFT();
 
-    for(Int_t k=0; k<z.n_points/2+1; k++){
-      if (w->hfft->GetBinCenter(k) < 20 || w->hfft->GetBinCenter(k) > 50){
-        w->spec[k] = 0;
-        w->spec_re[k] = w->spec[k].Re();
-        w->spec_im[k] = w->spec[k].Im();
-        w->idx_recompt(k);
-      }
+  for(Int_t k=0; k<z.n_points/2+1; k++){
+    if (w->hfft->GetBinCenter(k) < 0.02 || w->hfft->GetBinCenter(k) > 0.05){
+      w->spec[k] = 0;
+      w->spec_re[k] = w->spec[k].Re();
+      w->spec_im[k] = w->spec[k].Im();
+      w->idx_recompt(k);
     }
+  }
+
+  
 
   // z.applyBandCut()
 
@@ -51,8 +54,8 @@ void create_wvf(ANALYZER &z, Int_t npts, Double_t step, Double_t freq, Double_t 
 
   w->fft(w->hwvf);
   w->backfft(*w);
-  // w->convertDecibel(w->hfft, 0);
-  // w->convertDecibel(w->hPSD, 0);
+  // w->convertDecibel(w->hfft, 16e3);
+  // w->convertDecibel(w->hPSD, 16e3);
 
   Double_t integral = 0;
   Double_t integral_fft = 0;
@@ -72,7 +75,7 @@ void test_fft(){
   create_wvf(z, 15000, 2, 0.5, 1e-3, 1e3);
 
   ANALYZER s("s");
-  create_wvf(s, 120000, 300, 3.3, 1e-6, 1e3);
+  create_wvf(s, 120000, 300, 3.3334, 1e-6, 1e3);
 
 
   TCanvas *cback = new TCanvas("cback", "cback",1920,0,1920,1080);
