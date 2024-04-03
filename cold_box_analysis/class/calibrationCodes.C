@@ -620,7 +620,8 @@ class Calibration
       xmin = fu[0]->GetParameter(1)-5*fu[0]->GetParameter(2);
 
       hcharge->GetXaxis()->SetRangeUser(1.2*xmin,1.1*xmax);
-      hcharge->StatOverflows(kTRUE);
+      // hcharge->StatOverflows(kTRUE);
+      hcharge->ClearUnderflowAndOverflow();
       lastOne->SetRange(xmin,xmax);
       lastOneFree->SetRange(xmin,xmax);
 
