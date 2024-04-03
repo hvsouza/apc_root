@@ -195,7 +195,7 @@ class Headers{
     int Pattern;
     int Channel;
     int EventCounter;
-    int TriggerTimeTag;
+    uint TriggerTimeTag;
 };
 
 class Read{
@@ -227,10 +227,12 @@ class Read{
     Double_t exclusion_window = 500;
     Double_t currentTime = 0;
     Double_t timeCicle = TMath::Power(2,31)-1;
+    Double_t timeflip = TMath::Power(2,32)-1;
     Double_t timeResolution = 8e-9; // 8 ns for 2 ns step, 16 ns for 4 ns step
     Double_t timestamp = 0;
     Double_t deltastamp = 0;
     Double_t temptime = 0;
+    Bool_t bitoverflow = false;
 
     string file_extension = ".txt";
   
@@ -739,14 +741,12 @@ class Read{
             break; // giving a 5 points relaxiation
           }
           if(i==0){
-            if(timestamp<0){
-              timestamp = timeCicle+timestamp;
-            }
+
             if(timestamp<temptime){
-              deltastamp = timestamp+timeCicle-temptime;
+              deltastamp = (timeflip - temptime) + (timestamp-timeCicle); // same as 2^31 + temptime + timestamp
             }
             else{
-              deltastamp = timestamp - temptime;
+              deltastamp = timestamp-temptime;
             }
 
             temptime = timestamp;
@@ -758,6 +758,10 @@ class Read{
               init_time = 1;
             }
             ch[i]->time = currentTime;
+          }
+          else{
+            ch[i]->time = ch[0]->time;
+            
           }
 
           // if(!isBinary) ch[i]->time = event_time[aux_time];
