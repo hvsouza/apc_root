@@ -9,7 +9,9 @@
 
 
 class ANALYZER{
+
   public:
+    vector<vector<Double_t>> _baseIntervals;
 
     TFile *f = nullptr;
     TTree *t1 = nullptr;
@@ -61,6 +63,35 @@ class ANALYZER{
     TCanvas *cpers = nullptr;
 
 
+    struct Baselineparameters {
+      Double_t baselineStart;
+      Double_t baselineTime;
+      string selection = "";
+      Double_t filter = 0;
+      Double_t exclusion_baseline = 0;
+      Double_t exclusion_window = 0;
+      Double_t validfraction = 3.;
+      Int_t selection_base = 0;
+      Bool_t use_bits = true;
+    };
+    Baselineparameters baselineparameters;
+
+    struct Header {
+      Double_t dtime;
+      Double_t startcharge;
+      Double_t endcharge;
+      Double_t baselineStart;
+      Double_t baselineTime;
+      Double_t maxRange;
+      Double_t fast_time;
+      Double_t slow_time;
+      vector<Double_t> *exclusion_baselines = nullptr;
+      Double_t exclusion_window;
+      Double_t filter;
+    };
+    Header head;
+    
+
     // _________________________ Methods related to the class maintenance _________________________ //
 
     // This allows to create a file, a tree and a branch outside the class
@@ -94,10 +125,19 @@ class ANALYZER{
           if (string(fkey->GetName()) == "head")
           {
             thead = (TTree*)f->Get("head");
-            Double_t dtused;
-            thead->SetBranchAddress("dtime", &dtused);
+            thead->SetBranchAddress("dtime", &head.dtime);
+            thead->SetBranchAddress("startcharge", &head.startcharge);
+            thead->SetBranchAddress("endcharge", &head.endcharge);
+            thead->SetBranchAddress("baselineStart", &head.baselineStart);
+            thead->SetBranchAddress("baselineTime", &head.baselineTime);
+            thead->SetBranchAddress("maxRange", &head.maxRange);
+            thead->SetBranchAddress("fast_time", &head.fast_time);
+            thead->SetBranchAddress("slow_time", &head.slow_time);
+            thead->SetBranchAddress("exclusion_baselines", &head.exclusion_baselines);
+            thead->SetBranchAddress("exclusion_window", &head.exclusion_window);
+            thead->SetBranchAddress("filter", &head.filter);
             thead->GetEntry(0);
-            dtime = dtused;
+            dtime = head.dtime;
             thead->ResetBranchAddresses();
             break;
           }
@@ -388,13 +428,16 @@ class ANALYZER{
       return 0;
     }
 
-    void integrate(Double_t from = 0, Double_t to = 0, Double_t percent = 0, Bool_t withlimit = false){
+    void integrate(Double_t from = 0, Double_t to = 0, Double_t percent = 0, Bool_t percent_withlimit = false, Double_t offset = 0, bool energy = false){
       Double_t res = 0;
       Double_t max = -1e12;
       if (to == 0) to = n_points*dtime;
       if(percent == 0){ // normal integration
         for(Int_t i = from/dtime; i < to/dtime; i++){
-          res += ch[kch]->wvf[i];
+          if (!energy)
+            res += ch[kch]->wvf[i]+offset;
+          else
+            res += ch[kch]->wvf[i]*ch[kch]->wvf[i]+offset;
           if(ch[kch]->wvf[i]>=max){
             max = ch[kch]->wvf[i];
             temp_pos = i*dtime;
@@ -406,14 +449,14 @@ class ANALYZER{
         max = getMaximum(from, to);
         Int_t imin = 0;
         Int_t imax = n_points;
-        if(withlimit){
+        if(percent_withlimit){
           imin = from/dtime;
           imax = to/dtime;
         }
         for(Int_t i = temp_pos; i >= imin ;i--){
           Double_t val = ch[kch]->wvf[i];
           if(val >= percent*max){
-            res += val;
+            res += val+offset;
           }
           else{
             break;
@@ -422,7 +465,7 @@ class ANALYZER{
         for(Int_t i = temp_pos+1; i < imax ;i++){
           Double_t val = ch[kch]->wvf[i];
           if(val >= percent*max){
-            res += val;
+            res += val+offset;
           }
           else{
             break;
@@ -658,11 +701,11 @@ class ANALYZER{
 
     }
     void averageFFT(Int_t maxevent = 0, Int_t startevent = 0, string selection = "", bool inDecibel = true, Double_t factor = 0, Double_t filter = 0){
-      if (maxevent==0) {
-        maxevent = nentries;
-      }
       getSelection(selection);
       Int_t nev = lev->GetN();
+      if (maxevent==0) {
+        maxevent = nev;
+      }
       if (startevent+maxevent <= nev) {
         nev = startevent+maxevent;
       }
@@ -811,18 +854,19 @@ class ANALYZER{
                          string selection = "",
                          Double_t filter = 0,
                          Double_t percent = 0){
-                         // Double_ clockbaseline = 0,
-                         // Double_t baseline_time = 0,
-                         // Double_t exclusion_baseline = 0,
-                         // Double_t exclusion_window = 0,
-                         // Double_t validfraction = 3.,
-                         // TH1D *hbase = nullptr){
       getSelection(selection);
       Int_t nev = lev->GetN();
       Int_t iev = 0;
       Double_t from = 0;
       Double_t to = 0;
-      int count = 0;
+      Bool_t correct_baseline = false;
+
+      if (_baseIntervals.size()!=0){
+        correct_baseline = true;
+        if ((int)_baseIntervals.size() != nev){
+          cout << "Baseline correction not possible, different size of events... " << endl;
+        }
+      }
       for(Int_t i = 0; i < nev; i++){
         printev(i, nev);
         iev = lev->GetEntry(i);
@@ -830,10 +874,16 @@ class ANALYZER{
         applyDenoise(filter);
         from = clockstart;
         to = clockstart + integration_time;
+        int count = 0;
+        Double_t newBase = 0;
         while(from < n_points*dtime && to < n_points*dtime && to < xmax){
-          integrate(from, to, percent);
-          h->Fill(temp_charge);
-          // cout << from << " " << to << " " << temp_charge << endl;
+          if (correct_baseline){
+            newBase = _baseIntervals[i][count];
+          }
+          integrate(from, to, percent, false, -newBase);
+          if (newBase != -999){
+            h->Fill(temp_charge - newBase);
+          }
           from += clockperiod;
           to = from + integration_time;
           count+=1;
@@ -845,7 +895,168 @@ class ANALYZER{
     }
 
 
-    
+
+    void getBaselineIntervals(Double_t clockstart,
+                              Double_t clockperiod,
+                              Double_t baseline_time,
+                              string selection = "",
+                              Double_t filter = 0,
+                              Double_t exclusion_baseline = 0,
+                              Double_t exclusion_window = 0,
+                              Double_t validfraction = 3.,
+                              TH1D *hbase = nullptr){
+      getSelection(selection);
+      Int_t nev = lev->GetN();
+      Int_t iev = 0;
+      Double_t from = 0;
+      Double_t to = 0;
+      _baseIntervals.clear();
+      _baseIntervals.resize(nev);
+      for(Int_t i = 0; i < nev; i++){
+        printev(i, nev);
+        iev = lev->GetEntry(i);
+        getWaveform(iev,kch);
+        applyDenoise(filter);
+        from = clockstart;
+        to = clockstart + baseline_time;
+        while(from < n_points*dtime && to < n_points*dtime && to < xmax){
+          baselineparameters.baselineStart = from;
+          baselineparameters.baselineTime = to;
+          baselineparameters.exclusion_baseline = exclusion_baseline;
+          baselineparameters.exclusion_window = exclusion_window;
+          baselineparameters.validfraction = validfraction;
+          Double_t base = compute_baseline(hbase);
+          from += clockperiod;
+          to = from + baseline_time;
+          _baseIntervals[i].push_back(base);
+        }
+      }
+    }
+
+    void extract_waveforms(Double_t from,
+                           Double_t to,
+                           string selection = "",
+                           Bool_t correct_baseline = true,
+                           string filename="sample.root",
+                           Double_t clockstart = 0,
+                           Double_t clockperiod = 0,
+                           TH1D *hbase = nullptr
+                           ){
+
+      TFile *fout = new TFile(filename.c_str(), "READ");
+      if (!fout->IsZombie()){
+        cout << "File " << filename << " already exists!" << endl;
+        cout << "Do you want to overwrite it? (yes/no): " << endl;
+        fout->Close();
+
+        // Prompt user for overwrite confirmation
+        std::string answer;
+        std::cin >> answer;
+
+        if (answer != "yes") {
+            std::cout << "Exiting without overwriting the file." << std::endl;
+            return;
+        }
+      }
+      ADC_DATA newch;
+
+      gROOT->cd();
+      fout = new TFile(filename.c_str(), "RECREATE");
+      TTree *tout = new TTree("t1", "ADC processed waveform");
+      // tout->SetAutoSave(false);
+      TBranch *newb = tout->Branch(Form("Ch%d.",this->getIdx()), &newch);
+
+      TTree *theadout = new TTree("head","header");
+      theadout->Branch("dtime", &head.dtime);
+      theadout->Branch("startcharge", &head.startcharge);
+      theadout->Branch("endcharge", &head.endcharge);
+      theadout->Branch("baselineStart", &head.baselineStart);
+      theadout->Branch("baselineTime", &head.baselineTime);
+      theadout->Branch("maxRange", &head.maxRange);
+      theadout->Branch("fast_time", &head.fast_time);
+      theadout->Branch("slow_time", &head.slow_time);
+      theadout->Branch("exclusion_baselines", &head.exclusion_baselines);
+      theadout->Branch("exclusion_window", &head.exclusion_window);
+      theadout->Branch("filter", &head.filter);
+      theadout->Fill();
+
+      if (to/dtime == this->n_points){
+        cout << "Limit reached " << "changing to " << this->n_points*dtime << endl;
+        to = this->n_points*dtime-1;
+      }
+      Int_t npts = (to/dtime - from/dtime);
+      // cout << npts << " " << to << " " << from << " " << dtime << " " << to/dtime << " " << from/dtime << endl;
+      newch.Set_npts(npts);
+
+      getSelection(selection);
+      Int_t nev = lev->GetN();
+      Int_t iev = 0;
+      from += clockstart;
+      to += clockstart;
+      baselineparameters.baselineStart += clockstart;
+      baselineparameters.baselineTime += clockstart;
+      Double_t fromstart = from;
+      Double_t tostart = to;
+      Double_t baseStartstart = baselineparameters.baselineStart;
+      Double_t baseTimestart = baselineparameters.baselineTime;
+
+      Double_t filter = (correct_baseline) ? baselineparameters.filter : 0;
+      Double_t newbase = 0;
+      for(Int_t i = 0; i < nev; i++){
+        printev(i, nev);
+        iev = lev->GetEntry(i);
+        getWaveform(iev,kch);
+        applyDenoise(filter);
+        from = fromstart;
+        to = tostart;
+        baselineparameters.baselineStart = baseStartstart;
+        baselineparameters.baselineTime = baseTimestart;
+        while(from < n_points*dtime && to < n_points*dtime && to < xmax){
+          if (correct_baseline){
+            newbase = compute_baseline(hbase);
+            getWaveform(iev,kch);
+          }
+          for (Int_t k = 0; k < npts; k++){
+              newch.wvf[k] = this->ch[kch]->wvf[(int)(k + from/dtime)] - newbase;
+            // aux++;
+          }
+          // cout << aux << " " << npts << " " << to << " " << from << " " << dtime << " " << to/dtime << " " << from/dtime << endl;
+          newch.peak = this->ch[kch]->peak;
+          newch.peakpos = this->ch[kch]->peakpos;
+          newch.charge = this->ch[kch]->charge;
+          newch.fprompt = this->ch[kch]->fprompt;
+          newch.event = this->ch[kch]->event;
+          newch.time = this->ch[kch]->time;
+          newch.base = this->ch[kch]->base;
+          newch.selection = baselineparameters.selection_base;
+
+          tout->Fill();
+
+          if (clockperiod != 0){
+            from += clockperiod;
+            to += clockperiod;
+            baselineparameters.baselineStart += clockperiod;
+            baselineparameters.baselineTime += clockperiod;
+            if (correct_baseline  && (baselineparameters.baselineStart >= n_points*dtime || baselineparameters.baselineTime >= n_points*dtime)){
+              break;
+            }
+          }
+          else{
+            break;
+          }
+        }
+
+      }
+
+      cout << "\n\n";
+      fout->WriteTObject(tout, "t1");
+      fout->WriteTObject(theadout, "head");
+      delete newb;
+      delete tout;
+      fout->Close();
+
+
+    }
     void create_persistence(Int_t nbins, Double_t ymin, Double_t ymax, Double_t filter, string cut, Double_t factor){
 
       Int_t nbinsx = (xmax-xmin)/dtime;
@@ -1015,13 +1226,30 @@ class ANALYZER{
     }
 
 
-    Double_t reval_baseline(vector<Double_t> range_base, Double_t exclusion_baseline, Double_t exclusion_window, Double_t validfraction = 3., TH1D *hbase = nullptr){
+    Double_t compute_baseline(TH1D *hbase = nullptr){
+
+      vector<Double_t> range_base = {baselineparameters.baselineStart, baselineparameters.baselineTime};
+      Double_t exclusion_baseline = baselineparameters.exclusion_baseline;
+      Double_t exclusion_window = baselineparameters.exclusion_window;
+      Double_t validfraction = baselineparameters.validfraction;
+
+      
       Double_t result = 0;
       if(!hbase){
-        if(!h) h = new TH1D("hbase","finding baseline",TMath::Power(2,14),0,TMath::Power(2,14));
+        if(!h) {
+          getMaxMin(range_base[0], range_base[1]);
+          Int_t min = (int)temp_min;
+          Int_t max = (int)temp_max;
+          Int_t nbins = (max-min);
+          if (baselineparameters.use_bits)
+            h = new TH1D("hbase","finding baseline",TMath::Power(2,14),0,TMath::Power(2,14));
+          else
+            h = new TH1D("hbase","finding baseline",nbins, min+0.5, max+0.5);
+        }
         hbase = h;
       }
       hbase->Reset();
+      // cout << "Computing from " << range_base[0] << " to " << range_base[1] << " " << exclusion_baseline << " " << exclusion_window << endl;
       for(Int_t i=range_base[0]/dtime; i<range_base[1]/dtime; i++) hbase->Fill(ch[kch]->wvf[i]);
       Double_t res0 = hbase->GetBinCenter(hbase->GetMaximumBin());
       Double_t hmean = hbase->GetMean();
@@ -1040,12 +1268,23 @@ class ANALYZER{
         }
       }
       if(bins>0)result/=bins;
-      if(bins > (range_base[1]/dtime)/validfraction){
+      if(bins > ((range_base[1]-range_base[0])/dtime)/validfraction){
+        baselineparameters.selection_base = 0;
       }
       else{
-        result = res0;
-        cout << "Not enough points probably... valid points = " << bins << endl;
+        // result = res0;
+        baselineparameters.selection_base = 1;
+        // cout << "Not enough points probably... valid points = " << bins << endl;
       }
+
+      delete h;
+      h = nullptr;
+      return result;
+    }
+
+    Double_t reval_baseline(TH1D *hbase = nullptr){
+      Double_t result = compute_baseline(hbase);
+
       addOffet(-result);
       return result;
     }
@@ -1083,7 +1322,7 @@ class ANALYZER{
       }
       TEventList *ttemp = new TEventList("ttemp", "ttemp");
 
-      if (xmax == 0) {
+      if (xmax == 0 || xmax>n_points*dtime) {
         xmax = n_points*dtime;
       }
       for(Int_t i = 0; i < lev->GetN(); i++){
@@ -1103,6 +1342,38 @@ class ANALYZER{
       lev->Subtract(ttemp);
       delete ttemp;
     }
+
+    void genSelectByAmplitude(Double_t filter = 0, Double_t xmin = 0, Double_t xmax = 0, Double_t limit = 100, string type = "higher"){
+      f->cd();
+      lev = (TEventList*)gDirectory->Get(Form("lev_%s",myname.c_str()));
+      lev->Reset();
+      TEventList *ttemp = new TEventList("ttemp", "ttemp");
+
+      if (xmax == 0 || xmax>n_points*dtime) {
+        xmax = n_points*dtime;
+      }
+      for(Int_t i = 0; i < nentries; i++){
+        // Int_t ev = lev->GetEntry(i);
+        Int_t ev = i;
+        printev(ev, nentries);
+        getWaveform(ev, kch);
+        applyDenoise(filter);
+        bool contact = false;
+        for(Int_t j = xmin/dtime; j < xmax/dtime; j++){
+          if(type == "higher") contact = checkHigher(ch[kch]->wvf[j], limit);
+          else contact = checkLower(ch[kch]->wvf[j], limit);
+          if(contact){
+            ttemp->Enter(ev);
+            break;
+          }
+        }
+      }
+      cout << "\n";
+      cout << ttemp->GetN() << " events found. " << endl;
+      lev->Add(ttemp);
+      delete ttemp;
+    }
+
 
     void getSelection(string selection)
     {

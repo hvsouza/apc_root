@@ -426,9 +426,9 @@ void ANALYZER::check_filtering(vector<Int_t> filter_max_and_step, Int_t event, I
       href = (TH1D*)h->Clone("href");
     }
     hnf_fft[i]->Divide(hnf_fft[i], href);
-    // for(Int_t j = 0; j < hnf_fft[i]->GetNbinsX(); j++){
-    //   hnf_fft[i]->SetBinContent(j+1, 20*log10(hnf_fft[i]->GetBinContent(j+1)));
-    // }
+    for(Int_t j = 0; j < hnf_fft[i]->GetNbinsX(); j++){
+      hnf_fft[i]->SetBinContent(j+1, 20*log10(hnf_fft[i]->GetBinContent(j+1)));
+    }
     hnf_fft[i]->SetTitle(Form("Filter = %d", filter));
     hnf_fft[i]->Rebin(rebine);
     hs->Add(hnf_fft[i],"hist");
@@ -443,9 +443,9 @@ void ANALYZER::check_filtering(vector<Int_t> filter_max_and_step, Int_t event, I
   getFFT();
   TH1D *hlow_fft = (TH1D*)h->Clone(Form("Low pass %0.f MHz", refFreq));
   hlow_fft->Divide(hlow_fft, href);
-  // for(Int_t j = 0; j < hlow_fft->GetNbinsX(); j++){
-  //   hlow_fft->SetBinContent(j+1, 20*log10(hlow_fft->GetBinContent(j+1)));
-  // }
+  for(Int_t j = 0; j < hlow_fft->GetNbinsX(); j++){
+    hlow_fft->SetBinContent(j+1, 20*log10(hlow_fft->GetBinContent(j+1)));
+  }
   hlow_fft->SetTitle(Form("Low pass %0.f MHz", refFreq));
   hlow_fft->Rebin(rebine);
   hlow_fft->SetLineColor(kRed);
