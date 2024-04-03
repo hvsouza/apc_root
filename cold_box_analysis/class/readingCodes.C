@@ -251,9 +251,10 @@ class Read{
     Double_t polarity=1; // set -1 invert to negative pulses
     // Bool_t noBaseline=true;
     vector<Int_t> channels = {1,2};
-    vector<Double_t> exclusion_baselines = {30};
+    vector<Double_t> exclusion_baselines = {};
     map<string, Double_t> map_exclusion_threshold_baselines = {{"none",0}};
-    vector<vector<Double_t>> charge_start_finish;
+
+    string other_ref_name = "channel";
 
     Int_t nfiles = 1;
 
@@ -314,6 +315,36 @@ class Read{
       }
       // for (Int_t j = 0; j < nchannels; j++) cout << j << " " << channels[j] << " " <<  exclusion_baselines[j] << endl;
     }
+
+
+    void setup_baseline_thresholds(){
+      Int_t nchannels = (int)channels.size();
+      auto mapIter = map_exclusion_threshold_baselines.find("none");
+
+      if (exclusion_baselines.size() == 0){
+        exclusion_baselines.push_back(exclusion_baseline);
+      }
+      if (mapIter != map_exclusion_threshold_baselines.end()){ // in case the map was not set
+        map_exclusion_threshold_baselines.erase("none");
+        for (Int_t i = 0; i < (int)exclusion_baselines.size(); i++){
+          map_exclusion_threshold_baselines[Form("Ch%d.", i)] = exclusion_baselines[i];
+        }
+      }
+      Double_t refval = exclusion_baselines[0];
+      exclusion_baselines.clear();
+      exclusion_baselines.resize(nchannels);
+      for(Int_t i = 0; i < nchannels; i++){
+        mapIter = map_exclusion_threshold_baselines.find(Form("Ch%d.",channels[i]));
+        if (mapIter == map_exclusion_threshold_baselines.end()){
+          cout << "WARNING!!! " << channels[i] << " not found in baseline map.. using: " << refval << endl;
+          exclusion_baselines[i] = refval;
+        }
+        else{
+          exclusion_baselines[i] = mapIter->second;
+        }
+      }
+
+    }
     void get_ch_info(string logfilename){
       ifstream logfile;
       logfile.open(logfilename.c_str(),ios::in);
@@ -339,6 +370,12 @@ class Read{
           break;
         }
         int found  = dataname.find(wave_ref);
+
+        if (found==-1){ // for data from Esteban GUI (channel_X.dat)
+          wave_ref = other_ref_name;
+          found  = dataname.find(wave_ref);
+        }
+
         if(found==-1){
           tempch.push_back(aux);
         }
@@ -365,8 +402,7 @@ class Read{
         aux++;
       }
       channels = tempch;
-      reset_vector(exclusion_baselines);
-      reset_double_vector(charge_start_finish);
+      setup_baseline_thresholds();
       logfile.close();
     }
   
@@ -503,6 +539,7 @@ class Read{
           thead->Branch("dtime", &dtime);
           thead->Branch("startcharge", &startCharge);
           thead->Branch("endcharge", &chargeTime);
+          thead->Branch("baselineStart", &baselineStart);
           thead->Branch("baselineTime", &baselineTime);
           thead->Branch("maxRange", &maxRange);
           thead->Branch("fast_time", &fast);
@@ -774,26 +811,9 @@ class Read{
               ch[i]->wvf[l] = filtered[l];
             }
           }
-          auto mapIter = map_exclusion_threshold_baselines.find("none");
-          if (mapIter != map_exclusion_threshold_baselines.end()){
-            if(exclusion_baselines.size() != 1){
-              exclusion_baseline = exclusion_baselines[i];
-            }
-            else if (exclusion_baselines.size() == 1){
-              exclusion_baseline = exclusion_baselines[0];
-            }
-          }
-          else{
-            mapIter = map_exclusion_threshold_baselines.find(Form("Ch%d.",channels[i]));
-            if (mapIter == map_exclusion_threshold_baselines.end()){
-              cout << "WARNING!!! " << channels[i] << " not found in baseline map.. using: " << exclusion_baselines[0] << endl;
-              exclusion_baseline = exclusion_baselines[0];
-            }
-            else{
-              exclusion_baseline = mapIter->second;
-            }
 
-          }
+          exclusion_baseline = exclusion_baselines[i];
+
           // cout << "kch = " << i << " " << channels[i] << " baseline = " << exclusion_baseline << endl;
           bl = baseline(filtered,ch[i]->selection,i,tEvent);
           // bl = baseline(ch[i]->wvf,ch[i]->selection,i,tEvent);
