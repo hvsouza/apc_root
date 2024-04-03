@@ -1,0 +1,5 @@
+# Run log save time:
+# 2024-01-15 12:04:51.458799
+
+We tried the old PoF module at full power. Slighly higher offset. 
+Data was taken on ch0 and ch2 of the digitizer, but saved as wave0 wave1. 
