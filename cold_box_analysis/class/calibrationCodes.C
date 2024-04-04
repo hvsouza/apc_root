@@ -644,7 +644,12 @@ class Calibration
       cout << "sphe charge = " << lastOne->GetParameter(7) - lastOne->GetParameter(4) << endl;
       cout << " SNR = " << (lastOne->GetParameter(4))/sqrt(pow(lastOne->GetParameter(2),2)+pow(lastOne->GetParameter(5),2)) << endl;
       cout << " SNR2 = " << abs((lastOne->GetParameter(4))/lastOne->GetParameter(2)) << endl;
-      out <<  lastOne->GetParameter(4) << " " << lastOne->GetParameter(7) << " " << lastOne->GetParameter(7) - lastOne->GetParameter(4) << endl;
+      out.seekp(0, ios::end);
+      if (out.tellp() == 0) {
+        out << "# mu1 mu2 m2-m1 sigma1 b1 sigma1" << endl;
+      }
+      out <<  lastOne->GetParameter(4) << " " << lastOne->GetParameter(7) << " " << lastOne->GetParameter(7) - lastOne->GetParameter(4) << " "
+        << lastOne->GetParameter(5) << " " << lastOne->GetParameter(1) << " " << lastOne->GetParameter(2) << endl;
 
       // ____________________________ Finish of sphe fit ____________________________ //
 
@@ -1002,7 +1007,7 @@ class SPHE2{
                                              // `fix` will not evaluate baseline and use raw threshold over moving average
                                              // See tolerance, baselineTime and baselineLimit above
 
-    bool   check_selection     = true; // uses(or not) variable `selection` to discard wvfs
+    bool   check_selection     = true; // uses(or not) variable `selection` to discard
     Bool_t withfilter          = true; // Integrate in the filtered waveform
     Bool_t integrate_from_peak = true; // Set true and the maximum will be searched inside the derivate region.
                                        // Otherwise the integral is done starting from the crossing negative zero of derivative
@@ -1010,6 +1015,7 @@ class SPHE2{
     Int_t hnbins = 50000;       // Output histogram bins and limits. Does not change this unless you will analyze alway the same device
     Int_t hxmin  = 0;           // The fit function has the `rebin` argument to avoid changing this values
     Int_t hxmax  = 0;
+    Bool_t normalize_histogram = false; // will normalize histogram by the average value
 
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -1053,6 +1059,7 @@ class SPHE2{
 
     Double_t mean = 0; //mean and stddev for hbase
     Double_t stddev = 0;
+    vector<Double_t> charge_values;
 
     vector<Double_t> peakPosition; //store position of the peaks
     vector<Double_t> peakMax; // store peak maximum
@@ -1284,9 +1291,46 @@ class SPHE2{
         cout << "A total of " << naverages << " waveforms where found "<< endl;
       }
 
+      Double_t normfactor = 1.;
+      if(normalize_histogram){
+        normfactor = std::reduce(charge_values.begin(), charge_values.end()) / charge_values.size();
+      }
+      for(auto v: charge_values){
+        hcharge->Fill(v/normfactor);
+      }
+
       // fout->WriteObject(hcharge,Form("%s_%i",filename.c_str(),z->getIdx()),"TObject::kOverwrite");
+      fout->cd();
       fout->WriteObject(hcharge,Form("%s",filename.c_str()),"TObject::kOverwrite");
       if(!led_calibration) fout->WriteObject(hdiscard,"hdiscard","TObject::kOverwrite");
+
+
+      TTree *theadspe = new TTree("head","header");
+      theadspe->Branch("tolerance", &tolerance);
+      theadspe->Branch("baselineTime", &baselineTime);
+      theadspe->Branch("baseLimit", &baseLimit);
+      theadspe->Branch("start", &start);
+      theadspe->Branch("finish", &finish);
+      theadspe->Branch("timeLow", &timeLow);
+      theadspe->Branch("timeHigh", &timeHigh);
+      theadspe->Branch("lowerThreshold", &lowerThreshold);
+      theadspe->Branch("maxHits", &maxHits);
+      theadspe->Branch("too_big", &too_big);
+      theadspe->Branch("waiting", &waiting);
+      theadspe->Branch("filter", &filter);
+      theadspe->Branch("interactions", &interactions);
+      theadspe->Branch("ninter", &ninter);
+      theadspe->Branch("diff_multiplier", &diff_multiplier);
+      theadspe->Branch("derivate_raw", &derivate_raw);
+      theadspe->Branch("dtime", &dtime);
+      theadspe->Branch("social_distance", &social_distance);
+      theadspe->Branch("method", &method);
+
+      theadspe->Branch("check_selection", &check_selection);
+      theadspe->Branch("withfilter", &withfilter);
+      theadspe->Branch("integrate_from_peak", &integrate_from_peak);
+      theadspe->Fill();
+      fout->WriteObject(theadspe, "head", "TObject::kOverwrite");
 
 
     }
@@ -1548,7 +1592,7 @@ class SPHE2{
         Double_t charge = z->temp_charge;
         Double_t peak = z->temp_max;
         if(get_this_charge){
-          hcharge->Fill(charge);
+          charge_values.push_back(charge);
           if(snap())
           {
             selected_charge.push_back(charge);

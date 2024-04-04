@@ -75,6 +75,15 @@ void giveMeSphe(){
     dark.check_selection = true; // uses(or not) variable `selection` to discard wvfs
     dark.withfilter      = true; // Integrate in the filtered waveform
 
+    dark.check_selection     = true; // uses(or not) variable `selection` to discard
+    dark.withfilter          = true; // Integrate in the filtered waveform
+    dark.integrate_from_peak = true; // Set true and the maximum will be searched inside the derivate region.
+                                     // Otherwise the integral is done starting from the crossing negative zero of derivative
+
+    dark.hnbins = 50000;       // Output histogram bins and limits. Does not change this unless you will analyze alway the same device
+    dark.hxmin  = 0;           // The fit function has the `rebin` argument to avoid changing this values
+    dark.hxmax  = 0;
+    dark.normalize_histogram = false; // will normalize histogram by the average value
 
 
     dark.giveMeSphe();
