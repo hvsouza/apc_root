@@ -254,7 +254,7 @@ class Read{
     vector<Double_t> exclusion_baselines = {};
     map<string, Double_t> map_exclusion_threshold_baselines = {{"none",0}};
 
-    string other_ref_name = "channel";
+    string other_ref_name = "channel_";
 
     Int_t nfiles = 1;
 

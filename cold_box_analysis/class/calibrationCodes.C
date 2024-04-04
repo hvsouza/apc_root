@@ -1298,6 +1298,7 @@ class SPHE2{
       for(auto v: charge_values){
         hcharge->Fill(v/normfactor);
       }
+      charge_values.clear();
 
       // fout->WriteObject(hcharge,Form("%s_%i",filename.c_str(),z->getIdx()),"TObject::kOverwrite");
       fout->cd();
