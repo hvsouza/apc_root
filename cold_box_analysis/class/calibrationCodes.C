@@ -379,7 +379,7 @@ class Calibration
       hcharge->Rebin(rebin);
     
       ofstream out;
-      out.open("sphe.txt", ios::app);
+      out.open(Form("sphe%i.txt", channel), ios::app);
 
       // ____________________________ Start of sphe fit ____________________________ //
       // hcharge->GetYaxis()->SetTitle("Normalized count");
@@ -646,7 +646,7 @@ class Calibration
       cout << " SNR2 = " << abs((lastOne->GetParameter(4))/lastOne->GetParameter(2)) << endl;
       out.seekp(0, ios::end);
       if (out.tellp() == 0) {
-        out << "# mu1 mu2 m2-m1 sigma1 b1 sigma1" << endl;
+        out << "# mu1 mu2 m2-m1 sigma1 b sigmab" << endl;
       }
       out <<  lastOne->GetParameter(4) << " " << lastOne->GetParameter(7) << " " << lastOne->GetParameter(7) - lastOne->GetParameter(4) << " "
         << lastOne->GetParameter(5) << " " << lastOne->GetParameter(1) << " " << lastOne->GetParameter(2) << endl;
