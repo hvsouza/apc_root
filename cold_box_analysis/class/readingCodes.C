@@ -217,7 +217,9 @@ class Read{
     Bool_t isBinary = false;
     Bool_t saveFilter = false;
     Bool_t with_headers = true;
-  
+    Bool_t withTimestamp=true;
+
+
     Double_t startCharge = 3300;
     Double_t maxRange = 5000;
     Double_t fast = 500;
@@ -246,6 +248,11 @@ class Read{
     Double_t chargeTime = 18000; // last time to integrate
     Bool_t noBaseline=false;
     Double_t baselineFraction = 1/3.;
+
+    Double_t nbinsbase = TMath::Power(2,basebits);
+    Double_t minbase = 0;
+    Double_t maxbase = TMath::Power(2,basebits);
+
 
 
     Double_t polarity=1; // set -1 invert to negative pulses
@@ -487,8 +494,7 @@ class Read{
       TFile *f1;
       TTree *t1;
       TTree *thead;
-      if(isBinary) hbase = new TH1D("hbase","finding baseline",TMath::Power(2,basebits),0,TMath::Power(2,nbits));
-      else hbase = new TH1D("hbase","finding baseline",1000,-1,1);
+      hbase = new TH1D("hbase","finding baseline",TMath::Power(2,basebits),0,TMath::Power(2,nbits));
       Double_t tEvent = 0;
       vector<ADC_DATA> ch(channels.size());
       vector<TBranch*> bch(channels.size());
@@ -499,8 +505,7 @@ class Read{
       navg.resize(channels.size(),0);
 
       if(isBinary) file_extension = ".dat";
-      else file_extension = ".txt";
-    
+
       if(filesdata.good() && filesdata.is_open()){ // Ok
         cout << "Reading file " << files << " ... " << endl;
       }
@@ -554,7 +559,7 @@ class Read{
           f1->Close();
         }
         // _______________________________________________________________________________________________________
-      
+
         readData(file_ch,rootfile,tEvent);
       
       }
@@ -643,7 +648,6 @@ class Read{
       int nbytes = 4;
       Int_t headers_npoints = 0;
       Int_t headers_nwvfs = 0;
-      Bool_t withTimestamp=true;
 
       string date, time;
       Double_t stamp;
@@ -652,40 +656,43 @@ class Read{
       Int_t aux_time = 0;
       for(Int_t i = 0; i < (int)channels.size(); i++){
         if(isBinary==false){
-          // LECROYWR104MXi-A/� 49455 Waveform
-          // Segments 2000 SegmentSize 2502
-          // Segment TrigTime TimeSinceSegment1
-          // #1 01-Jan-2002 00:32:41 0
-          // #2 01-Jan-2002 00:32:41 0.0001
-          // continue;
-          getline(fin[i],headers);
-          // cout << headers << endl;
-          fin[i] >> headers >> headers_nwvfs >> headers >> headers_npoints;
-          // cout << headers << endl;
-          getline(fin[i],headers); // taking extra \r
+          if (with_headers)
+          {
+            // LECROYWR104MXi-A/� 49455 Waveform
+            // Segments 2000 SegmentSize 2502
+            // Segment TrigTime TimeSinceSegment1
+            // #1 01-Jan-2002 00:32:41 0
+            // #2 01-Jan-2002 00:32:41 0.0001
+            // continue;
+            getline(fin[i],headers);
+            // cout << headers << endl;
+            fin[i] >> headers >> headers_nwvfs >> headers >> headers_npoints;
+            // cout << headers << endl;
+            getline(fin[i],headers); // taking extra \r
 
 
-          if(withTimestamp){
-            getline(fin[i],headers); // reads the header of time stamp
-            for(Int_t ln=0;ln<headers_nwvfs;ln++){
-              fin[i] >> headers >> date >> time >> stamp;
-              // cout << ln <<  " " << headers_nwvfs << " " <<  headers << " " << date << " " <<  time << endl;
-              if(ln==0){
-                // cout << date << " " << time << endl;
-                starting_time = myTimer.timeRead(date,time,format_date,format_time);
-                event_time[ln] = starting_time;
-                // printf("Starting time = %1.f\n",starting_time);
+            if(withTimestamp){
+              getline(fin[i],headers); // reads the header of time stamp
+              for(Int_t ln=0;ln<headers_nwvfs;ln++){
+                fin[i] >> headers >> date >> time >> stamp;
+                // cout << ln <<  " " << headers_nwvfs << " " <<  headers << " " << date << " " <<  time << endl;
+                if(ln==0){
+                  // cout << date << " " << time << endl;
+                  starting_time = myTimer.timeRead(date,time,format_date,format_time);
+                  event_time[ln] = starting_time;
+                  // printf("Starting time = %1.f\n",starting_time);
+                }
+                else{
+                  starting_time+=stamp;
+                  event_time[ln] = starting_time;
+                }
               }
-              else{
-                starting_time+=stamp;
-                event_time[ln] = starting_time;
-              }
+              getline(fin[i],headers); // reads the extra \r
             }
-            getline(fin[i],headers); // reads the extra \r
-          }
          
-          getline(fin[i],headers);
-          // cout << headers << endl;
+            getline(fin[i],headers);
+            // cout << headers << endl;
+          }
         }
       }
 
@@ -703,13 +710,13 @@ class Read{
           fin[0].clear();
           fin[0].seekg(0);
         }
-        for(Int_t i = 0; i < (int)channels.size(); i++){
-          avg[i].resize(n_points,0);
-          ch[i]->Set_npts(n_points); // gain a few ns
-        }
-        if(baselineTime > n_points*dtime){
-          baselineTime = n_points*dtime;
-        }
+      }
+      for(Int_t i = 0; i < (int)channels.size(); i++){
+        avg[i].resize(n_points,0);
+        ch[i]->Set_npts(n_points); // gain a few ns
+      }
+      if(baselineTime > n_points*dtime){
+        baselineTime = n_points*dtime;
       }
 
       vector<Double_t> raw(n_points);
@@ -732,6 +739,9 @@ class Read{
                 break;
               }
               n_reads++;
+              if(polarity==-1){
+                temp = max_bits - temp;
+              }
               raw[j] = temp;
               ch[i]->wvf[j] = temp;
               filtered[j] = temp;
