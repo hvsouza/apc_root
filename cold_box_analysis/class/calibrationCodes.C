@@ -389,6 +389,8 @@ class Calibration
     
     
       TCanvas *c1 = new TCanvas("c1","Carga");
+      TCanvas *c = new TCanvas("c", "c",1920,0,1920,1080);
+
       // c1->SetLogy();
       gPad->SetGrid(1,1);
       gPad->SetTicks(1,1);
@@ -848,15 +850,15 @@ class Calibration
       ltext = pleg->AddText(Form("Std Dev: %.2f", hcharge->GetStdDev()));
       ltext = pleg->AddText(Form("#chi^{2} / ndf: %.2f/%d", lastOne->GetChisquare(), lastOne->GetNDF()));
       ltext = pleg->AddText(Form("Fitted gaussians: %d", n_peaks+2));
-      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(0),lastOne->GetParameter(0), lastOne->GetParError(0)));
-      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(1),lastOne->GetParameter(1), lastOne->GetParError(1)));
-      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(2),lastOne->GetParameter(2), lastOne->GetParError(2)));
-      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(3),lastOne->GetParameter(3), lastOne->GetParError(3)));
-      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(4),lastOne->GetParameter(4), lastOne->GetParError(4)));
-      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(5),lastOne->GetParameter(5), lastOne->GetParError(5)));
-      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(6),lastOne->GetParameter(6), lastOne->GetParError(6)));
-      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(7),lastOne->GetParameter(7), lastOne->GetParError(7)));
-      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(8),lastOne->GetParameter(8), lastOne->GetParError(8)));
+      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(0),abs(lastOne->GetParameter(0)), lastOne->GetParError(0)));
+      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(1),abs(lastOne->GetParameter(1)), lastOne->GetParError(1)));
+      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(2),abs(lastOne->GetParameter(2)), lastOne->GetParError(2)));
+      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(3),abs(lastOne->GetParameter(3)), lastOne->GetParError(3)));
+      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(4),abs(lastOne->GetParameter(4)), lastOne->GetParError(4)));
+      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(5),abs(lastOne->GetParameter(5)), lastOne->GetParError(5)));
+      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(6),abs(lastOne->GetParameter(6)), lastOne->GetParError(6)));
+      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(7),abs(lastOne->GetParameter(7)), lastOne->GetParError(7)));
+      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(8),abs(lastOne->GetParameter(8)), lastOne->GetParError(8)));
 
       // ((TText*)pleg->GetListOfLines()->Last())->SetTextAlign(23);
       pleg->Draw();
@@ -1013,9 +1015,11 @@ class SPHE2{
                                        // Otherwise the integral is done starting from the crossing negative zero of derivative
 
     Int_t hnbins = 50000;       // Output histogram bins and limits. Does not change this unless you will analyze alway the same device
-    Int_t hxmin  = 0;           // The fit function has the `rebin` argument to avoid changing this values
-    Int_t hxmax  = 0;
+    Double_t hxmin  = 0;           // The fit function has the `rebin` argument to avoid changing this values
+    Double_t hxmax  = 0;
     Bool_t normalize_histogram = false; // will normalize histogram by the average value
+
+    Bool_t do_updateSPEvalues = true;
 
 
     ///////////////////////////////////////////////////////////////////////////////

@@ -25,7 +25,8 @@ void ANALYZER::showWaveform(Int_t maxevent, Double_t filter, Int_t dt){
   if (maxevent==0) {
     maxevent = nentries;
   }
-  TCanvas *c1 = new TCanvas("c1");
+  TCanvas *c1 = new TCanvas("c1", "c1",1920,0,1920/2,1080/2);
+
 
   TLatex *tx = new TLatex();
   for(Int_t i = 0; i < maxevent; i++){
