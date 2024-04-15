@@ -149,6 +149,9 @@ class Calibration
 
     Bool_t drawDebugLines = false;
     Bool_t show_all_parameters = false;
+
+    TTree *thead = nullptr;
+    Double_t normfactor = 1;
   
   
     // ____________________________________________________________________________________________________ //
@@ -179,6 +182,16 @@ class Calibration
         f1 = new TFile(rootFile.c_str(),"READ");
         h = (TH1D*)f1->Get(histogram.c_str());
         if(!h) h = (TH1D*)f1->Get("analyzed");
+        for (auto fkey: *f1->GetListOfKeys()){
+          if (string(fkey->GetName()) == "head")
+          {
+            thead = (TTree*)f1->Get("head");
+            thead->SetBranchAddress("normfactor", &normfactor);
+            thead->GetEntry(0);
+            thead->ResetBranchAddresses();
+            break;
+          }
+        }
       }
       else{
         h = (TH1D*)htemp->Clone("");
@@ -650,8 +663,8 @@ class Calibration
       if (out.tellp() == 0) {
         out << "# mu1 mu2 m2-m1 sigma1 b sigmab" << endl;
       }
-      out <<  lastOne->GetParameter(4) << " " << lastOne->GetParameter(7) << " " << lastOne->GetParameter(7) - lastOne->GetParameter(4) << " "
-        << lastOne->GetParameter(5) << " " << lastOne->GetParameter(1) << " " << lastOne->GetParameter(2) << endl;
+      out <<  abs(lastOne->GetParameter(4))*normfactor << " " << abs(lastOne->GetParameter(7))*normfactor << " " << abs(lastOne->GetParameter(7)*normfactor - lastOne->GetParameter(4))*normfactor << " "
+          << abs(lastOne->GetParameter(5))*normfactor << " " << abs(lastOne->GetParameter(1))*normfactor << " " << abs(lastOne->GetParameter(2))*normfactor << endl;
 
       // ____________________________ Finish of sphe fit ____________________________ //
 
@@ -1183,6 +1196,8 @@ class SPHE2{
       sample_wvf_filtered = new Double_t[npts_wvf];
       if (get_wave_form) twvf->Branch(Form("Ch%i.",channel),&sample);
 
+      if (do_updateSPEvalues) updateSPEvalues();
+
 
       nshow_start = nshow_range[0];
       nshow_finish = nshow_range[1];
@@ -1334,6 +1349,7 @@ class SPHE2{
       theadspe->Branch("check_selection", &check_selection);
       theadspe->Branch("withfilter", &withfilter);
       theadspe->Branch("integrate_from_peak", &integrate_from_peak);
+      theadspe->Branch("normfactor", &normfactor);
       theadspe->Fill();
       fout->WriteObject(theadspe, "head", "TObject::kOverwrite");
 
@@ -1804,6 +1820,51 @@ class SPHE2{
       g_selected.clear();
 
       delete c1;
+
+
+    }
+
+    void updateSPEvalues(){
+
+      ifstream fsphe;
+      string fsphe_name = Form("sphe%d.txt", channel);
+      fsphe.open(fsphe_name, ios::in);
+      if(fsphe.good() && fsphe.is_open()){ // Ok
+        // cout << "Reading file " << files << " ... " << endl;
+      }
+      else{
+        cout << "The file " << fsphe_name << " did not open!!" << endl;
+        cout << "Keeping standard values... " << endl;
+        return;
+      }
+      fsphe.seekg(-1,ios_base::end);                // go to one spot before the EOF
+
+      bool keepLooping = true;
+      bool first_one = true;
+      while(keepLooping) {
+        char ch;
+        fsphe.get(ch);                            // Get current byte's data
+
+        if((int)fsphe.tellg() <= 1) {             // If the data was at or before the 0th byte
+          fsphe.seekg(0);                       // The first line is the last line
+          keepLooping = false;                // So stop there
+        }
+        else if(ch == '\n' && first_one==false) {                   // If the data was a newline
+          keepLooping = false;                // Stop at the current position.
+        }
+        else {                                  // If the data was neither a newline nor at the 0 byte
+          fsphe.seekg(-2,ios_base::cur);        // Move to the front of that data, then to the front of the data before it
+        }
+        first_one = false;
+      }
+
+      string lastLine;
+      Double_t dummy;
+      fsphe >> sphe_charge >> sphe_charge2 >> dummy >> sphe_std;
+      // cout << sphe_charge << " " << sphe_charge2 << " " << dummy << " " << sphe_std << endl;
+
+      fsphe.close();
+
 
 
     }
