@@ -149,10 +149,16 @@ class Calibration
 
     Bool_t drawDebugLines = false;
     Bool_t show_all_parameters = false;
+    Bool_t quitemode = false;
 
     TTree *thead = nullptr;
     Double_t normfactor = 1;
-  
+
+    Int_t fit_status = -1;
+    Double_t snr = 0;
+    Double_t chi2 = 0;
+    Double_t ndf = 0;
+    Int_t lastOneAttempts = 2;
   
     // ____________________________________________________________________________________________________ //
     void fit_sphe_wave(string name, bool optimize = true){
@@ -326,7 +332,8 @@ class Calibration
 
       if(debug)
       {
-        TCanvas *cdb = new TCanvas("cdb");
+        TCanvas *cdb = new TCanvas("cdb", "cdb",1920,0,700,500);
+
         cdb->cd();
         h->GetYaxis()->SetTitle("# of entries");
         h->GetXaxis()->SetTitle("Charge (ADC*ns)");
@@ -341,10 +348,14 @@ class Calibration
         d->SetLineColor(kRed);
         d->Draw("SAME");
 
-        printf("Found %d candidate peaks\n",nfound);
-        for(Int_t i=0;i<nfound;i++) printf("posx= %f, posy= %f\n",fPositionX[i], fPositionY[i]);
+        if (!quitemode)
+        {
+          printf("Found %d candidate peaks\n",nfound);
+          for(Int_t i=0;i<nfound;i++) printf("posx= %f, posy= %f\n",fPositionX[i], fPositionY[i]);
+        }
         faux->Draw("SAME");
-        cout << "npeaks = " << n_peaks << " lowest = " << lowestpt << " spe = " << (fPositionX[1]-fPositionX[0]) << endl;
+        if (!quitemode) cout << "npeaks = " << n_peaks << " lowest = " << lowestpt << " spe = " << (fPositionX[1]-fPositionX[0]) << endl;
+        if(quitemode) delete cdb;
       }
 
 
@@ -401,7 +412,6 @@ class Calibration
       hcharge->GetXaxis()->SetTitle("Charge (ADC*nsec)");
     
     
-      TCanvas *c1 = new TCanvas("c1","Carga");
       TCanvas *c = new TCanvas("c", "c",1920,0,1920,1080);
 
       // c1->SetLogy();
@@ -553,9 +563,17 @@ class Calibration
         lastOne->FixParameter(1,0);
         lastOne->FixParameter(2,1);
       }
-      Int_t fit_status = -1;
-      fit_status = hcharge->Fit("lastOne","R");
-      cout << "Fit status before free std dev: " << fit_status << endl;
+      fit_status = -1;
+
+      string lastOneFitOpt = "RQ0";
+      if (!quitemode) lastOneFitOpt = "R";
+      for(Int_t ktemp = 0; ktemp < lastOneAttempts; ktemp++)
+      {
+        hcharge->Fit("lastOne",lastOneFitOpt.c_str());
+        fit_status = TestFitSuccess();
+        if (fit_status == 1) break;
+      }
+      if(!quitemode) cout << "Fit status before free std dev: " << fit_status << endl;
 
       if(make_free_stddevs == false){
         fu[0]->SetParameter(0,abs(lastOne->GetParameter(0)));
@@ -600,8 +618,13 @@ class Calibration
         // cout << lastGausLowerLim << endl;
         // cout << lastGausUpperLim << endl;
 
-        fit_status = hcharge->Fit("lastOneFree","R");
-        cout << "Fit status with free std dev: " << fit_status << endl;
+        string lastOneFitFreeOpt = "RQ0S";
+        if (!quitemode) lastOneFitFreeOpt = "RS";
+        hcharge->Fit("lastOneFree",lastOneFitFreeOpt.c_str());
+        chi2 = lastOneFree->GetChisquare();
+        ndf = lastOneFree->GetNDF();
+        fit_status = TestFitSuccess();
+        if(!quitemode) cout << "Fit status with free std dev: " << fit_status << endl;
 
 
         fu[0]->SetParameter(0,abs(lastOneFree->GetParameter(0)));
@@ -632,7 +655,7 @@ class Calibration
       hcharge->Draw("hist");
       
 
-      xmin = fu[0]->GetParameter(1)-5*fu[0]->GetParameter(2);
+      xmin = fu[0]->GetParameter(1)-5*abs(fu[0]->GetParameter(2));
 
       hcharge->GetXaxis()->SetRangeUser(1.2*xmin,1.1*xmax);
       // hcharge->StatOverflows(kTRUE);
@@ -649,22 +672,29 @@ class Calibration
       if(make_free_stddevs==false) lastOne->Draw("LP SAME");
       else {
         lastOneFree->Draw("LP SAME");
-        lastOne = (TF1*)lastOneFree->Clone("lastOne");
+        lastOne = (TF1*)lastOneFree->Clone("lastOneShow");
       }
       string name = histogram + ".root";
       //     c1->Print(name.c_str());
-      cout << "1th peak = " << lastOne->GetParameter(4) << endl;
-      cout << "2th peak = " << lastOne->GetParameter(7) << endl;
-      cout << "Std dev  = " << lastOne->GetParameter(5) << endl;
-      cout << "sphe charge = " << lastOne->GetParameter(7) - lastOne->GetParameter(4) << endl;
-      cout << " SNR = " << (lastOne->GetParameter(4))/sqrt(pow(lastOne->GetParameter(2),2)+pow(lastOne->GetParameter(5),2)) << endl;
-      cout << " SNR2 = " << abs((lastOne->GetParameter(4))/lastOne->GetParameter(2)) << endl;
-      out.seekp(0, ios::end);
-      if (out.tellp() == 0) {
-        out << "# mu1 mu2 m2-m1 sigma1 b sigmab" << endl;
+      snr = abs((lastOne->GetParameter(4))/lastOne->GetParameter(2));
+
+      if (!quitemode){
+        cout << "1th peak = " << lastOne->GetParameter(4) << endl;
+        cout << "2th peak = " << lastOne->GetParameter(7) << endl;
+        cout << "Std dev  = " << lastOne->GetParameter(5) << endl;
+        cout << "sphe charge = " << lastOne->GetParameter(7) - lastOne->GetParameter(4) << endl;
+        cout << " SNR = " << (lastOne->GetParameter(4))/sqrt(pow(lastOne->GetParameter(2),2)+pow(lastOne->GetParameter(5),2)) << endl;
+        cout << " SNR2 = " << snr << endl;
+
+        out.seekp(0, ios::end);
+        if (out.tellp() == 0) {
+          out << "# mu1 mu2 m2-m1 sigma1 b sigmab" << endl;
+        }
+        out <<  abs(lastOne->GetParameter(4))*normfactor << " " << abs(lastOne->GetParameter(7))*normfactor << " " << abs(lastOne->GetParameter(7)*normfactor - lastOne->GetParameter(4))*normfactor << " "
+            << abs(lastOne->GetParameter(5))*normfactor << " " << abs(lastOne->GetParameter(1))*normfactor << " " << abs(lastOne->GetParameter(2))*normfactor << " ";
+
+        out << std::fixed << std::setprecision(2) << snr << endl;
       }
-      out <<  abs(lastOne->GetParameter(4))*normfactor << " " << abs(lastOne->GetParameter(7))*normfactor << " " << abs(lastOne->GetParameter(7)*normfactor - lastOne->GetParameter(4))*normfactor << " "
-          << abs(lastOne->GetParameter(5))*normfactor << " " << abs(lastOne->GetParameter(1))*normfactor << " " << abs(lastOne->GetParameter(2))*normfactor << endl;
 
       // ____________________________ Finish of sphe fit ____________________________ //
 
@@ -706,7 +736,7 @@ class Calibration
       if(darknoise){
         // ____________________________ Start dark noise CT analysis ____________________________ //
         
-        cout << "\n\n\nMaking ratio between 1 sphe and 2 sphe: " << endl;
+        if (!quitemode) cout << "\n\n\nMaking ratio between 1 sphe and 2 sphe: " << endl;
         Double_t zeroAmp = lastOne->GetParameter(0);
         Double_t zeroMean = lastOne->GetParameter(1);
         Double_t zeroSigma = lastOne->GetParameter(2);
@@ -746,14 +776,15 @@ class Calibration
         twoGaus->SetParameters(twoAmp,twoMean,twoSigma);
         
         Double_t twoIntegral = twoGaus->Integral(xmin,xmax);
-        
-        cout << "Total 1 = " << oneIntegral << " \t total 2 =  " << twoIntegral << endl;
-        cout << "Ratio = " << twoIntegral/oneIntegral << endl;
-        
-        cout << "Total events normalized = " << lastOne->Integral(xmin,xmax) << endl;
-        
-        cout << "CT probability = " << twoIntegral/(oneIntegral+twoIntegral) << endl;
-        
+
+        if (!quitemode)
+        {
+          cout << "Total 1 = " << oneIntegral << " \t total 2 =  " << twoIntegral << endl;
+          cout << "Ratio = " << twoIntegral/oneIntegral << endl;
+          cout << "Total events normalized = " << lastOne->Integral(xmin,xmax) << endl;
+          cout << "CT probability = " << twoIntegral/(oneIntegral+twoIntegral) << endl;
+        }
+
         
         
         
@@ -768,7 +799,7 @@ class Calibration
         
         Double_t threeIntegral = threeGaus->Integral(xmin,xmax);
         
-        cout << "\n\n\n Another possibility would be CT = " << (twoIntegral+threeIntegral)/(oneIntegral+twoIntegral+threeIntegral) << endl;
+        if (!quitemode) cout << "\n\n\n Another possibility would be CT = " << (twoIntegral+threeIntegral)/(oneIntegral+twoIntegral+threeIntegral) << endl;
         
         // ____________________________ Finish Poisson analysis ____________________________ //
 
@@ -876,6 +907,9 @@ class Calibration
       // ((TText*)pleg->GetListOfLines()->Last())->SetTextAlign(23);
       pleg->Draw();
       // ____________________________ FinishDraw legend by hand ____________________________ //
+
+      if(quitemode) delete c;
+
     }
 
     void setParametersFree(TF1 *lastOneFree, TF1 *lastOne){
@@ -927,7 +961,18 @@ class Calibration
       }
     }
 
-
+    bool TestFitSuccess(bool verbose = false)
+    {
+      std::string minuitstatus = std::string(gMinuit->fCstatu);
+      if(minuitstatus.compare("CONVERGED ") != 0 && minuitstatus.compare("OK        ") != 0) //the spaces are important
+      {
+        if(verbose)
+          std::cout << "  Minimization did not converge! (status_\"" << minuitstatus << "\")" << std::endl;
+        return false;
+      }
+      else
+        return true;
+    }
 
     Calibration(string mname = "c"){
       myname = mname;
@@ -1312,7 +1357,7 @@ class SPHE2{
 
       Double_t normfactor = 1.;
       if(normalize_histogram){
-        normfactor = std::reduce(charge_values.begin(), charge_values.end()) / charge_values.size();
+        normfactor = abs(std::reduce(charge_values.begin(), charge_values.end()) / charge_values.size());
       }
       for(auto v: charge_values){
         hcharge->Fill(v/normfactor);
