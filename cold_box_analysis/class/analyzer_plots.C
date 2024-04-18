@@ -47,6 +47,9 @@ void ANALYZER::showWaveform(Int_t maxevent, Double_t filter, Int_t dt){
     c1->Update();
     if(dt!=0) this_thread::sleep_for(chrono::milliseconds(dt));
   }
+  if (gROOT->IsBatch()) {
+    c1->Print("show_wvfs.gif++"); //produces infinite loop
+  }
 }
 
 void ANALYZER::persistence_plot(Int_t nbins, Double_t ymin, Double_t ymax, Double_t filter, string cut, Double_t factor){
@@ -93,7 +96,10 @@ TGraph ANALYZER::drawGraph(string opt, Int_t n, Double_t* x, Double_t* y){
     gwvf->GetYaxis()->SetRangeUser(ymin,ymax);
   }
   gwvf->GetXaxis()->SetRangeUser(xmin,xmax);
+  gwvf->SetLineColor(mylinecolor);
+  gwvf->SetMarkerColor(mymarkercolor);
   gwvf->SetEditable(kFALSE);
+
   TLatex *tx = new TLatex();
   TPad *currentPad = (TPad*)gROOT->GetSelectedPad();
   if(plotShowEvent){

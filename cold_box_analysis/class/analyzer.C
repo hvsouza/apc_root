@@ -60,6 +60,10 @@ class ANALYZER{
     Double_t temp_pos_min = 0;
     Double_t temp_dummy = 0;
 
+    Color_t mylinecolor = kBlack;
+    Color_t mymarkercolor = kBlack;
+
+
     TCanvas *cpers = nullptr;
 
 
