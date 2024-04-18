@@ -136,6 +136,41 @@ class DENOISE{
     }
 
 
+    template<class T>
+    void cumulativeAverage(T* v, T* res, Int_t myinte = 10, Double_t start = 0, Double_t finish = 0, Bool_t eco = false){
+
+      Double_t sum = 0;
+      Double_t avgi = 0;
+      Int_t count = 0;
+      Double_t normfactor = myinte+1;
+      if (eco){
+        normfactor = pow(2., myinte); // each point contributes much less (gain some spaces)
+      }
+
+
+      for(Int_t i = 0; i < finish; i++){
+
+        if(i<start){ // make it to start at i = 5
+          res[i] = v[i];
+        }
+        else{
+          count += 1;
+          if (count > myinte){
+            res[i] = avgi + (v[i] - avgi)/normfactor;
+            avgi = res[i];
+          }
+          else if( count == myinte ){
+            avgi = sum/myinte;
+            res[i] = v[i];
+          }
+          else{
+            res[i] = v[i];
+            sum+=v[i];
+          }
+        }
+      }
+
+    }
 
 
     template<class T>

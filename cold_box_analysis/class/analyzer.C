@@ -34,6 +34,7 @@ class ANALYZER{
     string filter_type = "default";
 
     Int_t n_points;
+    Bool_t invert = false;
     vector<vector<Double_t>> raw;
     vector<vector<Double_t>> wvf;
     vector<TH1D*> haverage;
@@ -568,6 +569,8 @@ class ANALYZER{
       b[k]->GetEvent(myevent);
       n_points = ch[k]->npts;
       currentEvent = ch[k]->event;
+      if (invert) scaleWvf(-1);
+
     }
 
     bool getWaveformHard(Int_t myevent = 0, Double_t factor = 1){
@@ -578,6 +581,7 @@ class ANALYZER{
       b[kch]->GetEvent(myevent);
       n_points = ch[kch]->npts;
       currentEvent = ch[kch]->event;
+      if (invert) factor *=-1;
       for (int j = 0; j < n_points; j++) {
         raw[kch][j] = ch[kch]->wvf[j]*factor;
         ch[kch]->wvf[j] = ch[kch]->wvf[j]*factor;
@@ -1403,24 +1407,22 @@ class ANALYZER{
     Double_t computeSNR_simple(Double_t xmin, Double_t xmax, vector<Double_t> signal_range){
       Double_t snr = 0;
       Double_t avg = 0;
+      Double_t avgsqr = 0;
       Double_t sum = 0;
+      Double_t sumsqr = 0;
       Double_t navg = 0;
       Double_t stddev = 0;
 
       for(Int_t i = xmin/dtime; i < xmax/dtime; i++){
         if(i*dtime > signal_range[1] || i*dtime < signal_range[0]){
           sum += ch[kch]->wvf[i];
+          sumsqr += ch[kch]->wvf[i]*ch[kch]->wvf[i];
           navg += 1;
         }
       }
       avg = sum/navg;
-      for(Int_t i = xmin/dtime; i < xmax/dtime; i++){
-        if(i*dtime > signal_range[1] || i*dtime < signal_range[0]){
-          Double_t diff = (ch[kch]->wvf[i] - avg);
-          stddev += diff*diff;
-        }
-      }
-      stddev = sqrt(stddev/(navg-1));
+      avgsqr = sumsqr/navg;
+      stddev = sqrt(avgsqr - avg*avg);
       Double_t max = getMaximum(signal_range[0], signal_range[1]);
       snr = max/stddev;
       return snr;
