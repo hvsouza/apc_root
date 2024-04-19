@@ -1171,6 +1171,21 @@ class SPHE2{
 
 
     }
+    ~SPHE2(){
+      delete twvf;
+      fout->Close();
+      fwvf->Close();
+      delete hbase;
+      delete hbase_smooth;
+      delete hcharge;
+      delete hdiscard;
+
+      delete z;
+      delete fout;
+      delete fwvf;
+      delete sample_wvf_filtered;
+      delete timeg;
+    }
 
 
     void searchForPeaks(){
@@ -1397,6 +1412,7 @@ class SPHE2{
       theadspe->Branch("normfactor", &normfactor);
       theadspe->Fill();
       fout->WriteObject(theadspe, "head", "TObject::kOverwrite");
+
 
 
     }

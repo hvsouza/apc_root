@@ -652,12 +652,11 @@ class ANALYZER{
       for(Int_t i = startpoint; i < endpoint; i++){
         if (ch[kch]->wvf[i] >= 0.1*(peak_level-baseline_level)+baseline_level && triggered==false) {
           triggered = true;
-          time_mark = linear_interpole_tot(i, 0.1*(peak_level-baseline_level))*dtime;
-          // time_mark = i*dtime;
+          time_mark = linear_interpole_tot(i, 0.1*(peak_level-baseline_level)+baseline_level)*dtime;
         }
         else if(triggered == true && ch[kch]->wvf[i]>=0.9*(peak_level - baseline_level)+baseline_level){
           if(debug) draw_rise_lines(time_mark, i*dtime, baseline_level, peak_level);
-          temp_pos = linear_interpole_tot(i, 0.9*(peak_level - baseline_level))*dtime;
+          temp_pos = linear_interpole_tot(i, 0.9*(peak_level - baseline_level)+baseline_level)*dtime;
           // time_mark = i*dtime - time_mark;
           temp_max = peak_level;
           return temp_pos - time_mark;
@@ -678,7 +677,7 @@ class ANALYZER{
       else{
         peak_level = getMean(peak_range[0],peak_range[1]);
       }
-      Int_t startpoint = temp_pos;
+      Int_t startpoint = temp_pos/dtime;
       Int_t endpoint = peak_range[1]/dtime;
       Bool_t triggered = false;
       Double_t time_mark = 0;
@@ -686,12 +685,12 @@ class ANALYZER{
       for(Int_t i = startpoint; i < endpoint; i++){
         if (ch[kch]->wvf[i] <= 0.9*(peak_level-baseline_level)+baseline_level && triggered==false) {
           triggered = true;
-          time_mark = linear_interpole_tot(i, 0.9*(peak_level-baseline_level))*dtime;
+          time_mark = linear_interpole_tot(i, 0.9*(peak_level-baseline_level)+baseline_level)*dtime;
           // time_mark = i*dtime;
         }
         else if(triggered == true && ch[kch]->wvf[i]<=0.1*(peak_level - baseline_level)+baseline_level){
           if(debug) draw_rise_lines(time_mark, i*dtime, baseline_level, peak_level);
-          temp_pos = linear_interpole_tot(i, 0.1*(peak_level - baseline_level))*dtime;
+          temp_pos = linear_interpole_tot(i, 0.1*(peak_level - baseline_level)+baseline_level)*dtime;
           // time_mark = i*dtime - time_mark;
           temp_max = peak_level;
           return temp_pos - time_mark;
