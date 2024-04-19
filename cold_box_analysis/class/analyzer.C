@@ -35,6 +35,7 @@ class ANALYZER{
 
     Int_t n_points;
     Bool_t invert = false;
+    Bool_t put_my_offset_back = false;
     vector<vector<Double_t>> raw;
     vector<vector<Double_t>> wvf;
     vector<TH1D*> haverage;
@@ -569,7 +570,9 @@ class ANALYZER{
       b[k]->GetEvent(myevent);
       n_points = ch[k]->npts;
       currentEvent = ch[k]->event;
-      if (invert) scaleWvf(-1);
+      if (invert && put_my_offset_back) addOffsetWithScale(0,0,0,-1);
+      else if(invert) scaleWvf(-1);
+
 
     }
 
@@ -1112,6 +1115,16 @@ class ANALYZER{
       if(to == 0) to = n_points*dtime;
       for(Int_t i = from/dtime; i < to/dtime; i++){
         ch[kch]->wvf[i] = ch[kch]->wvf[i] + offset;
+      }
+    }
+
+    void addOffsetWithScale(Double_t offset = 0, Double_t from = 0, Double_t to = 0, Double_t factor = 1){
+      if(offset == 0){
+        offset = ch[kch]->base;
+      }
+      if(to == 0) to = n_points*dtime;
+      for(Int_t i = from/dtime; i < to/dtime; i++){
+        ch[kch]->wvf[i] = ch[kch]->wvf[i]*factor + offset;
       }
     }
     void checkSignals(Double_t **_raw, Double_t **_filtered){
