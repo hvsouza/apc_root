@@ -570,8 +570,10 @@ class ANALYZER{
       b[k]->GetEvent(myevent);
       n_points = ch[k]->npts;
       currentEvent = ch[k]->event;
-      if (invert && put_my_offset_back) addOffsetWithScale(0,0,0,-1);
-      else if(invert) scaleWvf(-1);
+      if (!invert && !put_my_offset_back) return;
+      else if (invert && put_my_offset_back) addOffsetWithScale(0,0,0,-1);
+      else if (invert) scaleWvf(-1);
+      else if (put_my_offset_back) addOffet();
 
 
     }
@@ -584,7 +586,11 @@ class ANALYZER{
       b[kch]->GetEvent(myevent);
       n_points = ch[kch]->npts;
       currentEvent = ch[kch]->event;
-      if (invert) factor *=-1;
+      if (!invert && !put_my_offset_back)
+      else if (invert && put_my_offset_back) addOffsetWithScale(0,0,0,-1);
+      else if (invert) scaleWvf(-1);
+      else if (put_my_offset_back) addOffet();
+
       for (int j = 0; j < n_points; j++) {
         raw[kch][j] = ch[kch]->wvf[j]*factor;
         ch[kch]->wvf[j] = ch[kch]->wvf[j]*factor;

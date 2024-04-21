@@ -1214,11 +1214,9 @@ class SPHE2{
 
       if(!z){ // load analyzer in case it is nullptr
         z = new ANALYZER(myname.c_str());
-        z->dtime = dtime;
         z->setAnalyzer(rootfile);
       }
       if(!z->t1){ // otherwise, check if the ttree was loaded
-        z->dtime = dtime;
         z->setAnalyzer(rootfile);
       }
       if(z->setChannel(Form("Ch%d.",channel)) == false) return;
@@ -1246,7 +1244,10 @@ class SPHE2{
       // if I found a point in around 100 ns, that is i = 25, I perform a while that goes
       // from i-mean_before = 19 up to i+mean_after = 50 (included) = 32 pts
       npts_wvf = (mean_before/dtime + mean_after/dtime) + 1;
-      if (led_calibration) npts_wvf = (mean_after/dtime - mean_before/dtime);
+      if (led_calibration){
+        if (mean_after > n_points*z->dtime) mean_after = n_points*dtime;
+        npts_wvf = (mean_after/dtime - mean_before/dtime);
+      }
 
       mean_waveform.clear();
       mean_waveform.resize(npts_wvf);
