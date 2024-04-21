@@ -586,7 +586,7 @@ class ANALYZER{
       b[kch]->GetEvent(myevent);
       n_points = ch[kch]->npts;
       currentEvent = ch[kch]->event;
-      if (!invert && !put_my_offset_back)
+      if (!invert && !put_my_offset_back){}
       else if (invert && put_my_offset_back) addOffsetWithScale(0,0,0,-1);
       else if (invert) scaleWvf(-1);
       else if (put_my_offset_back) addOffet();

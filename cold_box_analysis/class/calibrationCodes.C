@@ -690,8 +690,14 @@ class Calibration
         if (out.tellp() == 0) {
           out << "# mu1 mu2 m2-m1 sigma1 b sigmab" << endl;
         }
-        out <<  abs(lastOne->GetParameter(4))*normfactor << " " << abs(lastOne->GetParameter(7))*normfactor << " " << abs(lastOne->GetParameter(7)*normfactor - lastOne->GetParameter(4))*normfactor << " "
-            << abs(lastOne->GetParameter(5))*normfactor << " " << abs(lastOne->GetParameter(1))*normfactor << " " << abs(lastOne->GetParameter(2))*normfactor << " ";
+        Double_t _mu1 = abs(lastOne->GetParameter(4))*normfactor;
+        Double_t _mu2 = abs(lastOne->GetParameter(7))*normfactor;
+        Double_t _mu21 = _mu2-_mu1;
+        Double_t _sigma1 = abs(lastOne->GetParameter(5))*normfactor;
+        Double_t _b = abs(lastOne->GetParameter(1))*normfactor;
+        Double_t _sigmab = abs(lastOne->GetParameter(2))*normfactor;
+        out <<  _mu1  << " " << _mu2 << " " << _mu21 << " "
+            << _sigma1 << " " << _b << " " << _sigmab << " ";
 
         out << std::fixed << std::setprecision(2) << snr << endl;
       }
