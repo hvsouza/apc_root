@@ -1,0 +1,81 @@
+:PROPERTIES:
+:TOC:      :include all :depth 3 :force (depth) :ignore (nothing) :local (nothing)
+:END:
+
+#+title: January 2024 M1 run log
+
+* General description
+
+Digitizer: CAEN DT5730SB \\
+Sample rate: 500 MSamples/s (2 ns step) \\
+Digitizer: 2 Vpp 14 Bits (0.122 mV/ADC) \\
+DC offset: 10% (check config_used.log file) \\
+Pretrigger: 60% or 70% \\
+Acquisition done with Wavedump. \\
+The data are save with 6 headers and nsamples of data. 4 bytes per header and 2 bytes per sample. Please, refer to the wavedump manual. \\
+
+We tried to keep the channels like the table below. But there is a channel map inside each folder.
+
+| CAEN ADC | Device   |
+| Ch0      | C1 PoF 1 |
+| Ch1      | C1 PoF 2 |
+| Ch2      | C2 PoF 1 |
+| Ch3      | C2 PoF 2 |
+| Ch4      | C3 PoF 1 |
+| Ch5      | C3 PoF 2 |
+| Ch6      | C4 PoF 1 |
+| Ch7      | C4 PoF 2 |
+
+* Debug of C3 (Saturday)
+C3 need both PoF on to work. Also a low offset ~33 mV that dropped later to ~23 mV. Below is the list of what we did, but without results
+- We cleaned SoF fibers and changed Koheron
+- We measured power of PoF n.6 (C3 PoF 2) and measured 760 mW. We also measured PoF n.2 (C1 PoF 2): 665 mW
+- Later (On Tuesday) we tested PoF n.5: 860 nW
+- Switched C3 PoF 2 with C1 PoF 2
+- Using old PoF module (with A and B channels) on C3. We started with a power of 860 mW and 900 mW. Then we used the maximum power of the module
+- When we used the maximum power the offset increased to around 33 mV and 36 mV.
+- Many times, when switching on C3 after reconnecting the fibers. We noticed a power starving behavior and also negative light signals (probably from power starving)
+- Debug of C2 and C4:
+With PoF n.3 only (C2 PoF 1) C2 works
+With PoF n.8 only (C4 PoF 2) C4 works
+However, they could not work with the other PoF only.
+
+- Dante measured the power of the lasers:
+  + PoF n.3: No power
+  + PoF n.8: 860 mW
+- After reconnecting some electric components of the PoF module:
+  + PoF n.3: 800 mW
+- After this C2 can work with any of the two fibers
+
+* NOTE about LED
+SPE calibration was wrongly done with 365 nm LED until 2024-01-15. From 2024-01-16, SPE calibration was properly done with LED 275 nm.
+
+* Summary of runs
+
+** 20240112_SPE
+Calibration of SPE done with 365 nm LED
+
+** 20240113_SPE
+Calibration of SPE done with 365 nm LED
+
+** 20240115_SPE_LED365nm
+Calibration of SPE done with 365 nm LED
+First LED (365 nm) scan for cathode module
+
+** 20240116_SPE_LED
+Calibration of SPE done with both LEDs (275 and 365 nm)
+Second LED scan (less steps) for cathode modules
+First LED scan for HD and VD.
+
+** 20240117_SPE_LED_RandomTrigger_cosmic
+Calibration of SPE done with 275 nm LED
+Another LED scan for cathode modules
+RandomTrigger data with cathode ON and OFF. Different combinations of devices on and off.
+A VERY SHORT cosmic run using coincidence between different X-Arapucas.
+
+
+** 20240122_cosmics_SPE_PoF
+Cosmic runs taken with cathode modules. Two runs per channel with thresholds around 10 and 100 photo-electrons.
+
+** 20240126_cosmics_SPE_membrane
+Cosmic runs taken with HD and VD. Two runs per channel with thresholds around 10 and 100 photo-electrons.
