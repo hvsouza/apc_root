@@ -112,6 +112,37 @@ void adjust_parameters(SPHE2 &dark, int channel){
             dark.time_cut = 3500;
             dark.cut_with_filtered = true;
             break;
+
+        case 8:
+            dark.sphe_charge   = 6615.18; 
+            dark.sphe_charge2  = 13445.2;
+            dark.sphe_std      = 877.564;
+
+
+            dark.hnbins = 400;
+            dark.hxmin = -10e3;
+            dark.hxmax = 60e3;
+            dark.spe_max_val_at_time_cut = 10;
+            dark.time_cut = 3500; 
+            dark.cut_with_filtered = true;
+            dark.channel = 0;
+            break;
+
+        case 9:
+            dark.sphe_charge   = 4958.45; 
+            dark.sphe_charge2  = 10109  ;
+            dark.sphe_std      = 1033.39;
+
+
+            dark.hnbins = 400;
+            dark.hxmin = -10e3;
+            dark.hxmax = 60e3;
+            dark.spe_max_val_at_time_cut = 10;
+            dark.time_cut = 3500; 
+            dark.cut_with_filtered = true;
+            dark.channel = 1;
+            break;
+
     }
 
 }

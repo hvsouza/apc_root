@@ -3,11 +3,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-
+import glob
 
 def read_and_write(filename, ch):
     data = np.load(filename, allow_pickle=True)
-    with open(f'wave{ch}.dat','wb') as f:
+    print(f"Writting {filename} of ch {ch} ... ")
+    with open(f'wave{ch}.dat','ab') as f:
         for d in data:
             leng = (len(d)*2+24).to_bytes(4,'little')
             for _ in range(6):
@@ -16,7 +17,12 @@ def read_and_write(filename, ch):
 
 
 if __name__ == "__main__":
-    all_files = os.listdir()
+    all_files = sorted(os.listdir())
+    fileisthere = False
+    datfiles = glob.glob("wave*.dat")
+    for dfile in datfiles:
+        os.remove(dfile)
+
     for filename in all_files:
         if not filename.startswith("adc_data"): continue
         ch = filename.split("ch")[1]
