@@ -320,6 +320,7 @@ class ANALYZER{
     Double_t getMinimum(Double_t from, Double_t to, Double_t *v = nullptr){
       if (!v) v = ch[kch]->wvf;
       Double_t min = 1e12;
+      if (to > n_points*dtime) to = n_points*dtime;
       for (Int_t i = from/dtime; i < to/dtime; i++) {
         if(v[i]<min){
           min = v[i];
@@ -1081,7 +1082,7 @@ class ANALYZER{
         hpers->Reset();
         hpers->SetBins(nbinsx, xmin, xmax, nbins, ymin, ymax);
       }
-      if(!cpers) cpers = new TCanvas(Form("cpers_%s", myname.c_str()), Form("cpers_%s", myname.c_str()),1920,0,1920,1080);
+      if(!cpers) cpers = new TCanvas(Form("cpers_%s_%d", myname.c_str(), getIdx()), Form("cpers_%s_%d", myname.c_str(), getIdx()),1920,0,1920,1080);
       else{cpers->cd();}
 
       getSelection(cut);

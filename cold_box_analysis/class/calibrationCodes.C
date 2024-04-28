@@ -123,8 +123,8 @@ class Calibration
     Double_t xmin = -10000;
     Double_t xmax = 40000;
 
-    Double_t deltaplus=1.4;
-    Double_t deltaminus=1.2;
+    Double_t deltaplus=1;
+    Double_t deltaminus=0;
 
     Double_t stdVar = 0.5;
   
@@ -132,7 +132,7 @@ class Calibration
   
     Bool_t fixZero = false;
   
-    Bool_t make_free_stddevs = false;
+    Bool_t make_free_stddevs = true;
 
     Double_t sphe_charge = 0; // wave0
     Double_t sphe_charge2 = 0; // wave0
@@ -159,6 +159,9 @@ class Calibration
     Double_t chi2 = 0;
     Double_t ndf = 0;
     Int_t lastOneAttempts = 2;
+
+    bool save_plot = false;
+    string nameplotpng = "";
   
     // ____________________________________________________________________________________________________ //
     void fit_sphe_wave(string name, bool optimize = true){
@@ -355,7 +358,10 @@ class Calibration
         }
         faux->Draw("SAME");
         if (!quitemode) cout << "npeaks = " << n_peaks << " lowest = " << lowestpt << " spe = " << (fPositionX[1]-fPositionX[0]) << endl;
-        if(quitemode) delete cdb;
+        if(quitemode){
+          delete cdb;
+          delete d;
+        }
       }
 
 
@@ -674,8 +680,6 @@ class Calibration
         lastOneFree->Draw("LP SAME");
         lastOne = (TF1*)lastOneFree->Clone("lastOneShow");
       }
-      string name = histogram + ".root";
-      //     c1->Print(name.c_str());
       snr = abs((lastOne->GetParameter(4))/lastOne->GetParameter(2));
 
       if (!quitemode){
@@ -914,7 +918,14 @@ class Calibration
       pleg->Draw();
       // ____________________________ FinishDraw legend by hand ____________________________ //
 
-      if(quitemode) delete c;
+      if (nameplotpng == "") nameplotpng = histogram + ".png";
+      if (save_plot)
+          c->Print(nameplotpng.c_str());
+      if(quitemode)
+      {
+        delete c;
+        if(rootFile=="") delete hcharge;
+      }
 
     }
 
@@ -980,6 +991,111 @@ class Calibration
         return true;
     }
 
+    vector<Double_t> perform_fit(Int_t ch = 0, Int_t rebin = 1, Double_t deconv = 4, Bool_t quite=true, TH1D *hspe = nullptr){
+
+      this->rebin = rebin;
+      this->channel = ch;
+      this->quitemode = quite;
+      string histogram;
+      if (hspe){
+        this->rootFile = "";
+        histogram = hspe->GetName();
+        this->htemp = hspe;
+      }
+      else{
+        histogram = "analyzed";
+        if(rootFile == "") this->rootFile = "sphe_histograms_Ch"+to_string(ch)+".root";
+      }
+
+      this->make_free_stddevs = true; // starts with false, if good fitting, change to true
+      this->searchParameters(histogram.c_str(), deconv, true); // give a first search in the parameters.
+
+      this->deltaplus = 1;
+      this->deltaminus = 0;
+
+      // this->drawDebugLines = true;
+      this->fit_sphe_wave(histogram.c_str(),false); // set true to make if you want to execute "searchParameters" inside here instead
+      vector<Double_t> ret = {static_cast<Double_t>(this->fit_status), this->snr, this->chi2, this->ndf};
+      this->snr = ret[1];
+      return ret;
+    }
+
+    void sphe_fit_try_hard(TH1D *h, Int_t ch = 0, Int_t minrebin = 1, Int_t maxrebin = 2, Int_t max_sigma = 8, bool save_last = false, Double_t tolerance = 0.1){
+
+      gROOT->SetBatch(kTRUE);
+      save_plot = false;
+      vector<Double_t> vals = {0,0,0,0};
+      vector<Double_t> values_best_fit = {0,0,0,0};
+      vector<Double_t> values_best_snr = {0,0,0,0};
+      vector<Double_t> ref = {0,0,0,0};
+      Double_t best_fit = 1e12;
+      Double_t best_snr = 0;
+      for (Int_t i = minrebin; i <= maxrebin; i*=2){
+        for(Int_t j = 1; j <= max_sigma; j++){
+          vals = perform_fit(ch,i, j, true, h);
+          if (vals[0] > 0){
+            Double_t goodf = vals[2]/vals[3];
+            if (goodf < best_fit){
+              best_fit = goodf;
+              values_best_fit = {static_cast<Double_t>(i), static_cast<Double_t>(j),vals[1],goodf};
+            }
+            if (vals[1] > best_snr){
+              best_snr = vals[1];
+              values_best_snr = {static_cast<Double_t>(i), static_cast<Double_t>(j),vals[1],goodf};
+            }
+          }
+        }
+
+      }
+      cout << "values_best_snr: " << values_best_snr[0] << " ";
+      cout << values_best_snr[1] << " ";
+      cout << values_best_snr[2] << " ";
+      cout << values_best_snr[3] << endl;
+      cout << "values_best_fit: " << values_best_fit[0] << " ";
+      cout << values_best_fit[1] << " ";
+      cout << values_best_fit[2] << " ";
+      cout << values_best_fit[3] << endl;
+      if (values_best_snr[2] != values_best_fit[2]){
+        if (abs(values_best_snr[2] - values_best_fit[2])/values_best_fit[2] < tolerance  || values_best_snr[2] < 0 || abs(values_best_snr[2])>25){
+          // nothing to do
+        }
+        else{
+          string Userchoise;
+          cout << "Not cool!!" << endl;
+          cout << "You have to pick one: SNR [s], Fit[f] ";
+          cin >> Userchoise;
+          if (Userchoise == "s")
+          {
+            cout << "Using best for SNR" << endl;
+            values_best_fit = values_best_snr;
+          }
+          else if(Userchoise == "f")
+          {
+            cout << "Using best for Fit" << endl;
+          }
+          else{
+            return;
+          }
+
+        }
+      }
+
+      if(values_best_snr == ref){
+        cout << "No fit works :( " << endl;
+        return;
+      }
+      if (save_last){
+        save_plot = true;
+      }
+      else{
+        gROOT->SetBatch(kFALSE);
+      }
+      perform_fit(ch, values_best_fit[0], values_best_fit[1], false, h);
+
+
+    }
+
+
     Calibration(string mname = "c"){
       myname = mname;
     }
@@ -1010,15 +1126,16 @@ class SPHE2{
     ///////////////////////////////////////////////////////////////////////////////
 
     Bool_t led_calibration = false; // if external trigger + led was used, set true
-                                   // start and finish will be the time of integration
+    // start and finish will be the time of integration
 
     Bool_t just_a_test = false; // well.. it is just a test, so `just_this` is the total waveforms analysed
     Int_t  just_this   = 200;
     Int_t  channel     = 1;
     string filename    = "analyzed";
+    
 
     vector<Int_t> nshow_range = {0,100}; // will save some debugging waveforms inside the range.
-                                // Example, nshow_range = {0,2} will save waveforms 0, 1 and 2;
+    // Example, nshow_range = {0,2} will save waveforms 0, 1 and 2;
 
     Double_t tolerance    = 5;    // n sigmas (smoothed) (not used for led)
                                   // if `method` is set to `fix`, the threshold will be the absolute value of tolerance, no baseline is calculated
@@ -1083,7 +1200,7 @@ class SPHE2{
     Double_t hxmax  = 0;
     Bool_t normalize_histogram = false; // will normalize histogram by the average value
 
-    Bool_t do_updateSPEvalues = true;
+    Bool_t do_updateSPEvalues = true; // set to true to automatically search for spheX.txt and retrieve proper spe (need to run twice)
 
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -1116,6 +1233,7 @@ class SPHE2{
     Double_t *timeg = nullptr;
 
     string rootfile    = "analyzed.root";
+    string outrootname = "";
     Int_t n_points = 0;
 
 
@@ -1178,19 +1296,19 @@ class SPHE2{
 
     }
     ~SPHE2(){
-      delete twvf;
-      fout->Close();
-      fwvf->Close();
-      delete hbase;
-      delete hbase_smooth;
-      delete hcharge;
-      delete hdiscard;
+      // if(twvf) delete twvf;
+      if(fout) fout->Close();
+      if(fwvf) fwvf->Close();
+      if(hbase) delete hbase;
+      if(hbase_smooth) delete hbase_smooth;
+      if(hcharge) delete hcharge;
+      if(hdiscard) delete hdiscard;
 
-      delete z;
-      delete fout;
-      delete fwvf;
-      delete sample_wvf_filtered;
-      delete timeg;
+      // if(z) delete z;
+      // if(fout) delete fout;
+      // if(fwvf) delete fwvf;
+      // if(sample_wvf_filtered) delete sample_wvf_filtered;
+      // if(timeg) delete timeg;
     }
 
 
@@ -1216,10 +1334,10 @@ class SPHE2{
       hcharge->Reset();
       if (hxmax != 0 && hxmin != 0)
         hcharge->SetBins(hnbins, hxmin, hxmax);
-      rootfile = filename + ".root";
 
       if(!z){ // load analyzer in case it is nullptr
         z = new ANALYZER(myname.c_str());
+        z->dtime = dtime; // in case there is no dtime written
         z->setAnalyzer(rootfile);
       }
       if(!z->t1){ // otherwise, check if the ttree was loaded
@@ -1228,11 +1346,15 @@ class SPHE2{
       if(z->setChannel(Form("Ch%d.",channel)) == false) return;
 
       kch = z->kch;
+      dtime = z->dtime; // safety checkpoint
       z->getWaveform(kch);
       n_points = z->n_points;
       smooted_wvf.resize(n_points);
       denoise_wvf.resize(n_points);
-      fout = new TFile(Form("sphe_histograms_Ch%i.root",channel),"RECREATE");
+      if (outrootname == ""){
+        outrootname = Form("sphe_histograms_Ch%i.root",channel);
+      }
+      fout = new TFile(outrootname.c_str(),"RECREATE");
 
       // ____________________ Setting up what needs to be set ____________________ //
 
@@ -1263,7 +1385,7 @@ class SPHE2{
       sample_wvf_filtered = new Double_t[npts_wvf];
       if (get_wave_form) twvf->Branch(Form("Ch%i.",channel),&sample);
 
-      if (do_updateSPEvalues) updateSPEvalues();
+      if (do_updateSPEvalues && get_wave_form) updateSPEvalues();
 
 
       nshow_start = nshow_range[0];
@@ -1379,7 +1501,20 @@ class SPHE2{
 
       Double_t normfactor = 1.;
       if(normalize_histogram){
-        normfactor = abs(std::reduce(charge_values.begin(), charge_values.end()) / charge_values.size());
+        nth_element(charge_values.begin(), charge_values.begin()+charge_values.size()*0.16, charge_values.end());
+        nth_element(charge_values.begin(), charge_values.begin()+charge_values.size()*0.84, charge_values.end());
+        Double_t minusstd = charge_values[charge_values.size()*0.16];
+        Double_t plusstd = charge_values[charge_values.size()*0.84];
+        Double_t _mean = 0;
+        Int_t _count = 0;
+        for (auto v: charge_values){
+          if (v >= minusstd && v <= plusstd){
+            _mean += v;
+            _count += 1;
+          }
+        }
+        // normfactor = abs(std::reduce(.begin(), charge_values.end()) / charge_values.size());
+        normfactor = abs(_mean)/_count;
       }
       for(auto v: charge_values){
         hcharge->Fill(v/normfactor);
@@ -1424,36 +1559,36 @@ class SPHE2{
 
     }
     void theGreatReset(){
-        hbase->Reset();
-        if(method != "led"){
-          if(derivate){
-            peaksRise.clear();
-            peaksCross.clear();
-          }
-          else{
-            hbase_smooth->Reset();
-          }
-          peakPosition.clear();
-          peakMax.clear();
-          selected_peaks.clear();
-          selected_time.clear();
-          temp_selected_peaks.clear();
-          temp_selected_time.clear();
-          selected_charge.clear();
-          selected_charge_time.clear();
-          discardedTime.clear();
-          discardedPeak.clear();
-          discardedCharge.clear();
-          discarded_idx.clear();
-          peaksFound.clear();
-          derivateMax.clear();
-          derivateMaxFound.clear();
+      hbase->Reset();
+      if(method != "led"){
+        if(derivate){
+          peaksRise.clear();
+          peaksCross.clear();
         }
+        else{
+          hbase_smooth->Reset();
+        }
+        peakPosition.clear();
+        peakMax.clear();
+        selected_peaks.clear();
+        selected_time.clear();
+        temp_selected_peaks.clear();
+        temp_selected_time.clear();
+        selected_charge.clear();
+        selected_charge_time.clear();
+        discardedTime.clear();
+        discardedPeak.clear();
+        discardedCharge.clear();
+        discarded_idx.clear();
+        peaksFound.clear();
+        derivateMax.clear();
+        derivateMaxFound.clear();
+      }
       
-        denoise_wvf.clear();
-        denoise_wvf.resize(n_points);
-        smooted_wvf.clear();
-        smooted_wvf.resize(n_points);
+      denoise_wvf.clear();
+      denoise_wvf.resize(n_points);
+      smooted_wvf.clear();
+      smooted_wvf.resize(n_points);
     }
 
     void processData(){
@@ -1645,13 +1780,13 @@ class SPHE2{
           for(Int_t j = (i-midpoint); j < (i+midpoint); j++) { //first one: from j = (5-5); j<(5+5)
             sum = sum+v[j];
           }
-         res[i] = (sum/width);
+          res[i] = (sum/width);
 
-         if(eval_baseline){ // in case we are computing the baseline
-           if(i*dtime<=baselineTime && abs(res[i])<baseLimit){
-             hbase_smooth->Fill(res[i]);
-           }
-         }
+          if(eval_baseline){ // in case we are computing the baseline
+            if(i*dtime<=baselineTime && abs(res[i])<baseLimit){
+              hbase_smooth->Fill(res[i]);
+            }
+          }
         }
         else{
 

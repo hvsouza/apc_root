@@ -319,7 +319,7 @@ class WIENER{
       TH1 *hfinal = 0;
       //Let's look at the output
       hfinal = TH1::TransformHisto(fft_final,hfinal,"Ref");
-      hfinal->Scale(factor);
+      // hfinal->Scale(factor);
 
 
       for(Int_t i = 0; i<npts; i++){
@@ -328,6 +328,21 @@ class WIENER{
       }
 
       shift_waveform(hwvf,y.maxBin);
+      Double_t bl = 0;
+      Double_t auxbaseline = 0;
+      for(Int_t i=0; i<baseline/step; i++){
+        bl+=hwvf->GetBinContent(i+1);
+        auxbaseline+=1;
+      }
+      if(baseline == 0) auxbaseline = 1;
+      bl=bl/auxbaseline;
+
+
+      for(Int_t i = 0; i<npts; i++){
+        res[i] = hwvf->GetBinContent(i+1);
+        hwvf->SetBinContent(i+1,res[i]-bl);
+      }
+
       fft(hwvf);
 
       maxBin = y.maxBin;

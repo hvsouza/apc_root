@@ -80,6 +80,7 @@ using namespace std;
 #include "analyzer.C"
 #include "analyzer_plots.C"
 #include "calibrationCodes.C"
+#include "scripts.C"
 #include "old_search_spe.C"
 #include "alpha_analysis.C"
 #include "samples.C"

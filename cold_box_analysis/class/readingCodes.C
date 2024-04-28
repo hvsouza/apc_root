@@ -450,6 +450,8 @@ class Read{
   
     void adc_read_all_data(Bool_t do_get_ch_info = true){
       max_bits = TMath::Power(2,nbits);
+
+      if (maxRange < startCharge) maxRange = startCharge + startCharge;
       if (do_get_ch_info) get_ch_info("files.log");
       readFiles("files.log"); //use it like this
       return;
