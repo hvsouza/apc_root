@@ -31,8 +31,6 @@ class IntegrationScan{
       dark.normalize_histogram = normalize_histogram;
       dark.rootfile = rootfile;
 
-      Calibration cal;
-      cal.make_free_stddevs = true;
 
 
 
@@ -41,6 +39,8 @@ class IntegrationScan{
       Double_t step = start_first_stop_step[3];
       string output = "";
       for (Double_t finish = first; finish <= start_first_stop_step[2]; finish+=step){
+        Calibration cal;
+        cal.make_free_stddevs = true;
         string hresname = Form("hcharge_%d_%d_Ch%d", static_cast<Int_t>(start), static_cast<Int_t>(finish), ch);
         dark.outrootname = hresname+".root";
         dark.start = start;

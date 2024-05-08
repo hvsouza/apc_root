@@ -460,7 +460,7 @@ class ANALYZER{
           imin = from/dtime;
           imax = to/dtime;
         }
-        for(Int_t i = temp_pos; i >= imin ;i--){
+        for(Int_t i = temp_pos/dtime; i >= imin ;i--){
           Double_t val = ch[kch]->wvf[i];
           if(val >= percent*max){
             res += val+offset;
@@ -469,7 +469,7 @@ class ANALYZER{
             break;
           }
         }
-        for(Int_t i = temp_pos+1; i < imax ;i++){
+        for(Int_t i = temp_pos/dtime+1; i < imax ;i++){
           Double_t val = ch[kch]->wvf[i];
           if(val >= percent*max){
             res += val+offset;
@@ -1082,7 +1082,7 @@ class ANALYZER{
         hpers->Reset();
         hpers->SetBins(nbinsx, xmin, xmax, nbins, ymin, ymax);
       }
-      if(!cpers) cpers = new TCanvas(Form("cpers_%s_%d", myname.c_str(), getIdx()), Form("cpers_%s_%d", myname.c_str(), getIdx()),1920,0,1920,1080);
+      if(!cpers) cpers = new TCanvas(Form("cpers_%s", myname.c_str()), Form("cpers_%s", myname.c_str()),1920,0,1920,1080);
       else{cpers->cd();}
 
       getSelection(cut);
