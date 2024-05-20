@@ -6,6 +6,7 @@ import os
 import glob
 
 def read_and_write(filename, ch):
+    fd = open(filename,"rb")
     data = np.load(filename, allow_pickle=True)
     print(f"Writting {filename} of ch {ch} ... ")
     with open(f'wave{ch}.dat','ab') as f:

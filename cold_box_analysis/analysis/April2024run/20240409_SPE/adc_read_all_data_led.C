@@ -22,9 +22,9 @@ void adc_read_all_data_led(string datadir = "./"){
     r.isBinary = true;
     
     r.baselineTime = 20000; // time limit for baseline
-    r.chargeTime = 6000; // last time to integrate
-    r.startCharge = 2800;
-    r.maxRange = 4400; // max range to search for amplitude peak
+    r.chargeTime = 6800; // last time to integrate
+    r.startCharge = 6000;
+    r.maxRange = 6800; // max range to search for amplitude peak
     r.fast = 100; // fprompt fast integration time
     r.slow = 5000; //fprompt slow integration time
     // r.exclusion_baselines = {6, 6, 6, 5, 2.5, 2.5, 4, 3}; // filtered waveform, anything above here will do +exclusion window

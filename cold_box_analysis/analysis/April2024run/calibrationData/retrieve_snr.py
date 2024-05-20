@@ -12,6 +12,8 @@ import re
 import argparse
 
 
+import mplhep
+mplhep.style.use(mplhep.style.ROOT)
 plt.rcParams.update({'font.size': 24,
                      'grid.linestyle': '--',
                      'axes.grid': True,
@@ -92,7 +94,7 @@ def retrieve_info(module, channel):
     return vgains, snr, drange, spes
 
 def make_plot(module, channels, xv, yv):
-    sof = [ 0 if ch == 0 else 1 for ch in channels ]
+    sof = [ 1 if ch == 0 else 2 for ch in channels ]
     for s, x, y in zip(sof, xv, yv):
         if module == "VD" or module == "HD":
             _label = f'{module}'

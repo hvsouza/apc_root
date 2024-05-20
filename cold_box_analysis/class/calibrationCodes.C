@@ -256,9 +256,11 @@ class Calibration
 
 
       Double_t upplim_gaus_base = fPositionX[0]+(3./4)*(fPositionX[1]-fPositionX[0])/2;
-      faux = new TF1("faux","gaus(0)",xmin,upplim_gaus_base);
-      faux->SetParameters(fPositionY[0],fPositionX[0],sqrt(fPositionX[0]));
-      h->Fit("faux","R0Q");
+      Double_t lowlim_gaus_base = fPositionX[0]-(fPositionX[1]-fPositionX[0])*2;
+      faux = new TF1("faux","gaus(0)",lowlim_gaus_base,upplim_gaus_base);
+      faux->SetParameters(fPositionY[0],fPositionX[0],(fPositionX[1]-fPositionX[0])/sqrt(2));
+      h->Fit("faux","R0QW");
+      h->Fit("faux","R0QW");
 
       peak0 = fPositionY[0];
       mean0 = fPositionX[0];
@@ -282,15 +284,29 @@ class Calibration
         // cout << startpoint << " " << bin_first_peak << " " << bin_baseline << " " << bin_second << " " << h->GetBinCenter(bin_second) << endl;
       }
       Double_t lowestpt = 0;
+      int countlow = 0;
       for (Int_t i = bin_second; i < nbins; i++){
         if(h->GetBinContent(i+1)<= 10*h->GetMinimum(0)*scale){
           lowestpt = h->GetBinCenter(i);
-          break;
+          countlow+=1;
         }
+        // else{
+        //   countlow=0;
+        // }
         if (i == nbins-1){
           lowestpt = h->GetBinCenter(i);
         }
+        if (countlow==1) break;
       }
+      // for (Int_t i = bin_second; i < nbins; i++){
+      //   if(h->GetBinContent(i+1)<= 10*h->GetMinimum(0)*scale){
+      //     lowestpt = h->GetBinCenter(i);
+      //     break;
+      //   }
+      //   if (i == nbins-1){
+      //     lowestpt = h->GetBinCenter(i);
+      //   }
+      // }
       n_peaks = Int_t(lowestpt/(fPositionX[1]-fPositionX[0])); // this should probably be -1 !!
       if(n_peaks <= 0 || nfound-pos0 < 3){
         cout << "Something wrong: npeaks = " << n_peaks << endl;
@@ -456,7 +472,7 @@ class Calibration
       for(Int_t i = 0; i<n_peaks; i++){
         func->SetParameter((i+6+aux),temp_startpoint);
         aux++;
-        func->SetParameter((i+6+aux),(i+2)*(mean1 - mean0) + mean1);
+        func->SetParameter((i+6+aux),(i+1)*(mean1 - mean0) + mean1);
         aux++;
         func->SetParameter((i+6+aux),sqrt(i+2)*sigma1);
         temp_startpoint = temp_startpoint/poisson_ratio;
@@ -483,7 +499,7 @@ class Calibration
       Double_t scale = 1/(hcharge->Integral());
       //hcharge->Scale(scale);
       hcharge->Draw("hist");
-      hcharge->Fit("func","R0Q");
+      // hcharge->Fit("func","R0Q");
       // Debug level:
       // 0 none
       // 1 first general fit
@@ -1892,6 +1908,7 @@ class SPHE2{
         if(get_this_wvf){
           sample.wvf[iwvf] = z->ch[kch]->wvf[i];
           sample_wvf_filtered[iwvf] = val;
+          sample.time = z->ch[kch]->time;
         }
         if(i >= integralfrom && i <= integralto){
           if (val < lowerThreshold){

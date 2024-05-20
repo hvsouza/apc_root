@@ -1,0 +1,337 @@
+./retrieve_snr.py 
+./retrieve_snr.py 
+./retrieve_snr.py 
+./retrieve_snr.py 
+./retrieve_snr.py -m C2
+./retrieve_snr.py -m C2 -m 0
+./retrieve_snr.py -m C2 -ch 0
+./retrieve_snr.py -m C2 -ch 0
+./retrieve_snr.py 
+./retrieve_snr.py -m C2 -ch 0
+./retrieve_snr.py -m C2 -ch 0
+./retrieve_snr.py 
+./retrieve_snr.py -m C2 -ch 0
+./retrieve_snr.py -m C2 -ch 0
+./retrieve_snr.py -m C2 -ch 0
+./retrieve_snr.py -m VD -ch 0 -i Hz_after -l 
+./retrieve_snr.py -m VD -ch 0 -i Hz_after
+./retrieve_snr.py -m VD -ch 6 -i Hz_after -l "Ground changed"
+./retrieve_snr.py -m VD -ch 6 -i Hz_after -l "Ground changed"
+./retrieve_snr.py -m VD -ch 6 -i Hz_OI -l "Integrators ON, ground chanrged"
+./retrieve_snr.py -m VD -ch 6 -i Hz_OI -l "Integrators ON, ground chanrged"
+./retrieve_snr.py -m VD -ch 6 -i Hz_OI -l "Integrators ON, ground chanrged"
+./retrieve_snr.py -m VD -ch 6 -i Hz_OI -l "Integrators ON, ground chanrged"
+./retrieve_snr.py -m C2 -i Swapped -l "C2, SoF swapped" 
+./retrieve_snr.py 
+./retrieve_snr.py --help
+./retrieve_snr.py -m C2 -i Swapped -l "SoF swapped"
+./retrieve_snr.py -m C1 -i 4152024 -l "ss"
+./retrieve_snr.py -m C1 -i 4152024 -l "ss"
+./retrieve_snr.py -m C1 -i 4152024 -l "HD @ AFE3, VD @ AFE0"
+./retrieve_snr.py -m C1 -i allChann -l "Cathode modules only"
+./retrieve_snr.py -m C1 -i ON_3 -l "Cathode modules only"
+./retrieve_snr.py -m C1 -i ON_3 -l "Cathode modules only"
+./retrieve_snr.py -m C1 -i HDco -l "HD connected to AFE3" 
+./retrieve_snr.py -m C1 -i ON_3 -l "Cathode modules only"
+./retrieve_snr.py -m C1 -i ON_3 -l "Cathode modules only"
+./retrieve_snr.py -m C1 -i ON_3 -l "Cathode modules only"
+./retrieve_snr.py -m C1 -i HDcon -l "HD @ AFE3"
+./retrieve_snr.py -m C1 -i HDcon -l "HD @ AFE3"
+./retrieve_snr.py -m C1 -i 4152024 -l "HD @ AFE3, VD @ AFE0"
+./retrieve_snr.py -m C1 -i 4152024 -l "HD @ AFE3, VD @ AFE0"
+./retrieve_snr.py -m C1 -i HDcon -l "HD @ AFE3"
+./retrieve_snr.py -m C1 -i 4152024 -l "HD @ AFE3, VD @ AFE0"
+./retrieve_snr.py -m C2 -i HDcon -l "HD @ AFE3"
+./retrieve_snr.py -m C2 -i HDcon -l "HD @ AFE3"
+./retrieve_snr.py -m C2 -i "C2_*HDcon" -l "HD @ AFE3"
+./retrieve_snr.py -m C2 -i "C2_*HDcon" -l "HD @ AFE3"
+./retrieve_snr.py -m C2 -i "C2_*HDcon" -l "HD @ AFE3"
+./retrieve_snr.py -m C2 -i 4152024 -l "HD @ AFE3, VD @ AFE0"
+./retrieve_snr.py -m C2 -i 4152024 -l "HD @ AFE3, VD @ AFE0"
+./retrieve_snr.py -m C2 -i 4152024 -l "HD @ AFE3, VD @ AFE0"
+./retrieve_snr.py -m C2 -i _3 -l "Cathode modules only"
+./retrieve_snr.py -m C3 -i _3 -l "Cathode modules only"
+./retrieve_snr.py -m C3 -i "C3_*HDcon" -l "HD @ AFE3"
+./retrieve_snr.py -m C3 -i 4152024 -l "HD @ AFE3, VD @ AFE0"
+f./retrieve_snr.py -m C4 -i _3 -l "Cathode modules only"
+./retrieve_snr.py -m C4 -i _3 -l "Cathode modules only"
+./retrieve_snr.py -m C4 -i "C4_*HDcon" -l "HD @ AFE3"
+./retrieve_snr.py -m C4 -i 4152024 -l "HD @ AFE3, VD @ AFE0"
+./retrieve_snr.py -m HD -i HDcon*AFE3 -l "HD @ AFE3"
+./retrieve_snr.py -m HD -i "HDcon*AFE3" -l "HD @ AFE3"
+./retrieve_snr.py -m HD -i "HDcon" -l "HD @ AFE3"
+./retrieve_snr.py -m HD -i "HDcon*AFE3" -l "HD @ AFE3"
+./retrieve_snr.py -m HD -i "HDcon*AFE3" -l "HD @ AFE3" -i ch 1
+./retrieve_snr.py -m HD -i "HDcon*AFE3" -l "HD @ AFE3" -ch 1
+./retrieve_snr.py -m HD -i "HDcon*AFE0" -l "HD @ AFE0" -ch 1
+./retrieve_snr.py -m HD -i "OIsON" -l "HD @ AFE3 - Offset int. on" -ch 1
+./retrieve_snr.py -m HD -i "OIsON" -l "HD @ AFE3 - Offset int. on" -ch 1
+./retrieve_snr.py -m HD -i HD_4*4152024 -ch 1 -l "HD @ AFE3, VD @ AFE0"
+./retrieve_snr.py -m HD -i HD_4*4152024 -ch 1 -l "HD @ AFE3, VD @ AFE0"
+./retrieve_snr.py -m VD -i HDVD -ch 6 -l "HD @ AFE3, VD @ AFE0"
+./retrieve_snr.py -m VD -i Hz_after -ch 6 -l "HD @ AFE3, VD @ AFE0 (ground changed)"
+./retrieve_snr.py -m VD -i OIsON_a -ch 6 -l "HD @ AFE3, VD @ AFE0 OIsON (ground changed)"
+./retrieve_snr.py -m VD -i VD_*4152024 -ch 6 -l "HD @ AFE3, VD @ AFE0 (ground changed)"
+./retrieve_snr.py -m VD -i OIsON_4 -ch 6 -l "HD @ AFE3, VD @ AFE0 OIsON (ground changed)"
+./retrieve_snr.py -m VD -i OIsON_4 -ch 6 -l "HD @ AFE3, VD @ AFE0 OIsON (ground changed)"
+./retrieve_snr.py -m C1 -i MovedConnections_16042024/C1_* -l "2024/04/16"
+./retrieve_snr.py -m C1 -i MovedConnections_16042024/C1_* -l "2024/04/16"
+./retrieve_snr.py -m C2 -i MovedConnections_16042024/C2_* -l "2024/04/16"
+./retrieve_snr.py -m C4 -i MovedConnections_16042024/C4_* -l "2024/04/16 @ AFE4"
+./retrieve_snr.py -m HD -i MovedConnections_16042024/HD* -l "2024/04/16 @ AFE3" -ch 1
+./retrieve_snr.py -m HD -i MovedConnections_16042024/HD* -l "2024/04/16 @ AFE3" -ch 1
+./retrieve_snr.py -m C3 -i run18/C3* -l "2024/04/25 - Higher gain" 
+./retrieve_snr.py -m C3 -i run18/C3* -l "2024/04/25 - Higher gain" 
+./retrieve_snr.py -m C3 -i run18/C3* -l "2024/04/25 - Higher gain" 
+vim calibrationData/retrieve_snr.py 
+./retrieve_snr.py -m C3 -i run18/C3* -l "2024/04/25 - Higher gain" 
+./retrieve_snr.py -m C3 -i run18/C3* -l "2024/04/25 - Higher gain" 
+./retrieve_snr.py -m C3 -i run18/C3* -l "2024/04/25 - Higher gain" 
+./retrieve_snr.py -m C3 -i run18/C3* -l "2024/04/25 - Higher gain" 
+./retrieve_snr.py -m C3 -i "C3/C3_C3_*HD" -l "2024/04/24 - HD @ AFE3, VD @ AFE0"  
+./retrieve_snr.py -m C3 -i "C3/C3_C3_*HD" -l "2024/04/24 - HD @ AFE3, VD @ AFE0"   --dry
+./retrieve_snr.py -m C3 -i "C3/C3_C3_*HD" -l "2024/04/24 - HD @ AFE3, VD @ AFE0"  --help
+./retrieve_snr.py -m C3 -i "C3/C3_*HD" -l "2024/04/24 - HD @ AFE3, VD @ AFE0"  --help
+./retrieve_snr.py -m C3 -i "C3/C3_*HD" -l "2024/04/24 - HD @ AFE3, VD @ AFE0" 
+./retrieve_snr.py -m C3 -i "C3/C3_*HD*" -l "2024/04/24 - HD @ AFE3, VD @ AFE0" 
+./retrieve_snr.py -m C3 -i "C3/C3_Apr*HD*" -l "2024/04/24 - HD @ AFE3, VD @ AFE0" 
+./retrieve_snr.py -m C3 -i "C3/C3_Apr*all*" -l "2024/04/24 - HD @ AFE3, VD @ AFE0" 
+./retrieve_snr.py -m C3 -i "C3/C3_5*" -l "2024/04\/24 - HD @ AFE3, VD @ AFE0" 
+./retrieve_snr.py -m C3 -i "C3/C3_5*" -l "HD @ AFE3, VD @ AFE0" 
+/home/henrique/Documents/ADC_data/coldbox_data/April2024run/calibrationData/correct_gain.py -m C3 -i run18/C3* -l "2024/04/25 - Higher gain" 
+/home/henrique/Documents/ADC_data/coldbox_data/April2024run/calibrationData/correct_gain.py -m C3 -i run18/C3* -l "2024/04/25 - Higher gain" 
+python snr_vs_integration.py 
+python snr_vs_integration.py 
+python snr_vs_integration.py 
+python snr_vs_integration.py 
+cp ../run4_C1_all_on_LED_275nm_20ns_6V20/snr_vs_integration.py .
+vim snr_vs_integration.py 
+mv snr_vs_integration.py ../../../
+vim /home/henrique/Documents/ADC_data/coldbox_data/April2024run/snr_vs_integration.py 
+python /home/henrique/Documents/ADC_data/coldbox_data/April2024run/snr_vs_integration.py -m C3
+cp ../run6_C3_all_on_LED_275nm_20ns_5V40/test/snr_vs_integration.py .
+vim snr_vs_integration.py 
+vim /home/henrique/Documents/ADC_data/coldbox_data/April2024run/snr_vs_integration.py 
+python /home/henrique/Documents/ADC_data/coldbox_data/April2024run/snr_vs_integration.py -m C1
+python snr_vs_integration.py 
+python snr_vs_integration.py 
+python snr_vs_integration.py 
+python snr_vs_integration.py 
+python /home/henrique/Documents/ADC_data/coldbox_data/April2024run/snr_vs_integration.py 
+python /home/henrique/Documents/ADC_data/coldbox_data/April2024run/snr_vs_integration.py 
+python /home/henrique/Documents/ADC_data/coldbox_data/April2024run/snr_vs_integration.py 
+python /home/henrique/Documents/ADC_data/coldbox_data/April2024run/snr_vs_integration.py C1
+python /home/henrique/Documents/ADC_data/coldbox_data/April2024run/snr_vs_integration.py -m C1
+python /home/henrique/Documents/ADC_data/coldbox_data/April2024run/snr_vs_integration.py -m C2
+python /home/henrique/Documents/ADC_data/coldbox_data/April2024run/snr_vs_integration.py -m C2
+python /home/henrique/Documents/ADC_data/coldbox_data/April2024run/snr_vs_integration.py 
+python /home/henrique/Documents/ADC_data/coldbox_data/April2024run/snr_vs_integration.py -m C3
+python /home/henrique/Documents/ADC_data/coldbox_data/April2024run/snr_vs_integration.py -m C3
+python /home/henrique/Documents/ADC_data/coldbox_data/April2024run/snr_vs_integration.py -m C3
+python /home/henrique/Documents/ADC_data/coldbox_data/April2024run/snr_vs_integration.py -m C4
+python mult_run.py -m C3 -i "/home/henrique/Documents/ADC_data/coldbox_data/April2024run/calibrationData/run18/C3*"
+python mult_run.py -m C3 -i run18/C3*"
+python mult_run.py -m C3 -i run18/C3*
+python mult_run.py -m C1 -i _3
+python mult_run.py -m C1 -i _3
+python mult_run.py -m C1 -i _3
+python mult_run.py -m C1 -i _3
+python mult_run.py -m C1 -i _3
+python mult_run.py -m C1 -i _3
+python mult_run.py -m C1 -i _3
+python mult_run.py -m C1 -i _3
+python mult_run.py -m C1 -i HDcon
+python mult_run.py -m C1 -i HDcon
+python mult_run.py -m C1 -i HDcon
+python mult_run.py -m C1 -i HDcon
+python mult_run.py -m C1 -i HDcon
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C1 -i 4152024
+python mult_run.py -m C2 -i 4152024
+python mult_run.py -m C2 -i HDcon
+python mult_run.py -m C2 -i HDcon
+python mult_run.py -m C2 -i 4152024
+python mult_run.py -m C2 -i HDcon
+python mult_run.py -m C2 -i HDcon
+python mult_run.py -m C2 -i HDcon
+python mult_run.py -m C2 -i HDcon
+python mult_run.py -m C2 -i 4152024
+python mult_run.py -m C2 -i 4152024
+python mult_run.py -m C2 -i C2m
+python mult_run.py -m C2 -i HDcon
+python mult_run.py -m C2 -i _3
+python mult_run.py -m C2 -i _3
+python mult_run.py -m C2 -i _3
+python mult_run.py -m C2 -i _3
+python mult_run.py -m C2 -i _3
+python mult_run.py -m C2 -i _3
+python mult_run.py -m C3 -i _3
+python mult_run.py -m C3 -i _3
+python mult_run.py -m C3 -i _3
+python mult_run.py -m C3 
+python mult_run.py -m C3 -i C3
+python mult_run.py -m C3 -i HDcon
+python mult_run.py -m C3 -i HDcon
+python mult_run.py -m C3 -i 4152024
+python mult_run.py -m C3 -i 4152024
+python mult_run.py -m C4 -i C4
+python mult_run.py -m C4 -i _3
+python mult_run.py -m C4 -i 
+python mult_run.py -m C4 -i C4
+python mult_run.py -m C4 -i C4
+python mult_run.py -m C4 -i _3
+python mult_run.py -m C2 -i HDcon
+python mult_run.py -m C4 -i HDcon
+python mult_run.py -m C4 -i 4152024
+python mult_run.py -m HD -i ""
+python mult_run.py -m HD -i "HDcon"
+python mult_run.py -m HD -i "HDcon"
+python mult_run.py -m HD -i "HDcon"
+python mult_run.py -m HD -i "HDcon"
+python mult_run.py -m HD -i "HDVD"
+python mult_run.py -m HD -i "IOsON"
+python mult_run.py -m HD -i "OIsON"
+python mult_run.py -m HD -i 4152024
+python mult_run.py -m HD -i "HD"
+python mult_run.py -m HD -i "OIsON"
+python mult_run.py -m HD -i "OIsON"
+python mult_run.py -m HD -i "OIsON"
+python mult_run.py -m HD -i "OIsON"
+python mult_run.py -m HD -i "OIsON"
+python mult_run.py -m HD -i 4152024
+python mult_run.py -m HD -i VD*4152024
+python mult_run.py -m HD -i HD_4*4152024
+python mult_run.py -m HD -i HD_4*4152024 -ch 1 "HD @ AFE3, VD @ AFE0"
+python mult_run.py -m HD -i HD_4*4152024 -ch 1 -l "HD @ AFE3, VD @ AFE0"
+python mult_run.py -m HD -i HD_4*4152024
+python mult_run.py -m VD -i ""
+python mult_run.py -m VD -i ""
+python mult_run.py -m VD -i "Apr*allCh"
+python mult_run.py -m VD -i "HDVD"
+python mult_run.py -m VD -i "HDVD"
+python mult_run.py -m VD -i "HDVD"
+python mult_run.py -m VD -i "Hz_after"
+python mult_run.py -m VD -i "Hz_after"
+python mult_run.py -m VD -i OIsON_a
+python mult_run.py -m VD -i OIsON_a
+python mult_run.py -m VD -i VD_*4152024
+python mult_run.py -m VD -i VD_*4152024
+python mult_run.py -m VD -i VD_*4152024
+python mult_run.py -m VD -i VD_*4152024
+python mult_run.py -m VD -i ON_4152024
+python mult_run.py -m VD -i ON_4152024
+python mult_run.py -m MovedC* -i C1_
+python mult_run.py -m C1 -i MovedC*/C1_
+python mult_run.py -m C1 -i MovedConnections_16042024/C1_*
+python mult_run.py -m C1 -i MovedC*/C1_*
+python mult_run.py -m C1 -i MovedC*/C1_*
+python mult_run.py -m C1 -i MovedC*/C1_*
+python mult_run.py -m C1 -i MovedC*/C1_*
+python mult_run.py -m C1 -i MovedC*/C1_*
+python mult_run.py -m C1 -i MovedC*/C2_*
+python mult_run.py -m C1 -i MovedC*/C3_*
+python mult_run.py -m C1 -i MovedC*/C4_*
+python mult_run.py -m C1 -i MovedC*/HD_*
+python mult_run.py -m C1 -i MovedC*/HDme*
+python mult_run.py -m C2 -i MovedC*/C2_*
+python mult_run.py -m C4 -i MovedC*/C4_*
+python mult_run.py -m HD -i MovedC*/HDm*
+python mult_run.py -m VD -i MovedC*/VDm*
+python mult_run.py -m C1 -i MovedC*/*
+python mult_run.py -m C1 -i MovedC*/
+python mult_run.py -m C1 -i MovedConnections_16042024/*/
+python mult_run.py -m C1 -i MovedConnections_16042024/C1_
+python mult_run.py -m C1 -i MovedConnections_16042024/C1_*
+python mult_run.py -m C1 -i MovedConnections_16042024/(*
+python mult_run.py -m C1 -i MovedConnections_16042024/**
+python mult_run.py -m C1 -i MovedConnections_16042024/**/
+python mult_run.py -m C1 -i MovedConnections_16042024/.*/
+python mult_run.py -m C1 -i "MovedConnections_16042024/**/"
+python mult_run.py -m C2 -i "MovedConnections_16042024/C2_/"
+python mult_run.py -m C2 -i "MovedConnections_16042024/C2_*/"
+python mult_run.py -m C4 -i "MovedConnections_16042024/C4_*/"
+python mult_run.py -m HD -i "MovedConnections_16042024/HD*/"
+python mult_run.py -m VD -i "MovedConnections_16042024/VD*/"
+python mult_run.py -m VD -i "MovedConnections_16042024/VD*/"
+python mult_run.py -m VD -i "MovedConnections_16042024/HD*?"
+python mult_run.py -m VD -i "MovedConnections_16042024/HD*?"
+python mult_run.py -m VD -i "MovedConnections_18042024/VD*?"
+python mult_run.py -m C3 -i "MovedConnections_18042024/C3*"
+python mult_run.py -m C3 -i "MovedConnections_18042024/C3*"
+python mult_run.py -m VD -i "MovedConnections_18042024/VD*"
+python mult_run.py -m VD -i "MovedConnections_18042024/VD*"
+python mult_run.py -m VD -i "MovedConnections_18042024/VD*"
+python mult_run.py -m C3 -i "MovedConnections_18042024/C3*"
+python mult_run.py -m C3 -i "MovedConnections_18042024/C3*"
+python mult_run.py -m VD -i "MovedConnections_18042024/VD*"
+python mult_run.py -m VD -i "MovedConnections_18042024/VD*"
+python mult_run.py -m VD -i "MovedConnections_18042024/VD*"
+python mult_run.py -m VD -i "MovedConnections_18042024/VD*"
+python mult_run.py --help
+python mult_run.py -m C1 -i "run*"
+python mult_run.py -m C1 -i "run*" --dry
+python mult_run.py -m C1 -i "run*" -n True
+python mult_run.py -m C1 -i "run*/**" -n True
+python mult_run.py -m C1 -i "run*/C1*/**" -n True
+python mult_run.py -m C1 -i "run*/C1*/*" -n True
+python mult_run.py -m C1 -i "run*/C1*/" -n True
+python mult_run.py -m C1 -i "run*/C1*/"
+python mult_run.py -m C2 -i "run*/C2*/"
+python mult_run.py -m C3 -i "run*/C3*/"
+python mult_run.py -m C4 -i "run*/C4*/"
+python mult_run.py -m HD -i "run*/HD*/"
+python mult_run.py -m VD -i "run*/VD*/"
+python mult_run.py -m VD -i "run*/VD*/" --dry
+python mult_run.py -m VD -i "run*/VD*/" 
+python mult_run.py -m VD -i "run*/VD*/" 
+python mult_run.py -m C1 -i "run*/C1*/" 
+python mult_run.py -m C2 -i "run*/C2*/" 
+python mult_run.py -m C3 -i "run*/C3*/" 
+python mult_run.py -m C4 -i "run*/C4*/" 
+python mult_run.py -m HD -i "run*/HD*/" 
+python mult_run.py -m HD -i "run*/HD*/" 
+for mod in C1 C2 C3 C4 HD VD; do python mult_run.py -m $mod -i "run*/${mod}*/"; done
+for mod in C1 C2 C3 C4 HD VD; do python mult_run.py -m $mod -i "run*/${mod}*/"; done
+for mod in HD; do python mult_run.py -m $mod -i "run*/${mod}*/"; done
+for mod in HD; do python mult_run.py -m $mod -i "run*/${mod}*/"; done
+for mod in HD; do python mult_run.py -m $mod -i "run*/${mod}*/"; done
+for mod in HD; do python mult_run.py -m $mod -i "run*/${mod}*/"; done
+for mod in HD; do python mult_run.py -m $mod -i "run*/${mod}*/"; done
+for mod in HD; do python mult_run.py -m $mod -i "run*/${mod}*/"; done
+for mod in HD; do python mult_run.py -m $mod -i "run*/${mod}*/"; done
+for mod in C1 C2 C3 C4 HD VD; do python mult_run.py -m $mod -i "run*/${mod}*/"; done
+for mod in VD; do python mult_run.py -m $mod -i "run*/${mod}*/"; done
+for mod in HD; do python mult_run.py -m $mod -i "run*/${mod}*/"; done
+for mod in C1; do python mult_run.py -m $mod -i "run*/${mod}*/"; done
+for mod in C3; do python mult_run.py -m $mod -i "run*/${mod}*/"; done
+for mod in C3; do python mult_run.py -m $mod -i "run18/${mod}*/"; done
+for mod in C3; do python mult_run.py -m $mod -i "run18/${mod}*/"; done
+for mod in C3; do python mult_run.py -m $mod -i "run18/${mod}*/"; done
+for mod in C3; do python mult_run.py -m $mod -i "run18/${mod}*/"; done
+for mod in C3; do python mult_run.py -m $mod -i "run18/${mod}*/"; done
+for mod in C3; do python mult_run.py -m $mod -i "run18/${mod}*/"; done
+for mod in C3; do python mult_run.py -m $mod -i "run18/${mod}*/"; done
+for mod in C3; do python mult_run.py -m $mod -i "run18/${mod}*/"; done

@@ -34,6 +34,7 @@ void adc_read_all_data_daphne(string datadir = "./", map<string, Double_t> exclu
     // r.OnlySomeEvents = true;
     r.stopEvent = 500;
     r.noBaseline = false;
+    r.baselineFraction = 1./4;
     r.polarity = polarity;
     r.isBinary = false;
     r.other_ref_name = "channel";

@@ -22,16 +22,16 @@ void adc_read_all_data(string datadir = "./"){
     Read r;
         
     r.dtime = 4; // step time in ns
-    r.nbits = 14; // this is used only for baseline histogram, changing it to 12 might help
+    r.nbits = 12; // this is used only for baseline histogram, changing it to 12 might help
     r.isBinary = true;
     
-    r.baselineTime = 20000; // time limit for baseline in ns
+    r.baselineTime = 40000; // time limit for baseline in ns
     r.startCharge = 10050;  // start integration time in ns
     r.chargeTime = 10200; // last time to integrate ns
     r.maxRange = 10200; // max range to search for amplitude peak
     r.fast = 200; // fprompt fast integration time
     r.slow = 1700; //fprompt slow integration time
-    r.exclusion_baseline = 4; // filtered waveform (ADCs), anything above here will do +exclusion window while evaluating the baseline
+    r.exclusion_baseline = 2.1; // filtered waveform (ADCs), anything above here will do +exclusion window while evaluating the baseline
     // r.exclusion_baselines = {35,15};
     r.exclusion_window = 1000; // time in ns that it will jump for baseline
     r.filter = 2; // denoise filter.. if filter = 0, no denoise is done.

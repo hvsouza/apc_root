@@ -1167,6 +1167,14 @@ class ANALYZER{
       }
     }
 
+    void applyCumulativeAverage(Int_t mafilter = 0, Double_t start = 0, Double_t finish = 0, Double_t *_raw = nullptr, Double_t *_filtered = nullptr){
+      if (finish == 0) finish = n_points*dtime;
+      if(mafilter!=0) {
+        checkSignals(&_raw,&_filtered);
+        dn.cumulativeAverage(_raw,_filtered,mafilter,start/dtime,finish/dtime);
+      }
+    }
+
     void applyDenoise(Double_t filter = 0, Double_t *_raw = nullptr, Double_t *_filtered = nullptr){
       checkSignals(&_raw,&_filtered);
       if (filter == 0 && _filtered == ch[kch]->wvf) return;
@@ -1316,9 +1324,15 @@ class ANALYZER{
       return result;
     }
 
-
+    void computeSlope(Int_t gap = 1, Double_t *_raw = nullptr, Double_t *_out = nullptr){
+      checkSignals(&_raw,&_out);
+      for (Int_t i = gap; i < n_points; i++){
+        _out[i] = (_raw[i]-_raw[i-gap])/(gap);
+      }
+    }
 
     // _________________________ ______________________ _________________________ //
+
 
     // _________________________ Methods for selection _________________________ //
     bool checkHigher(Double_t a, Double_t b){
@@ -1406,6 +1420,7 @@ class ANALYZER{
     {
       f->cd();
       if(selection!="use_mine"){
+        lev->Resize(nentries);
         t1->Draw(Form(">>lev_%s",myname.c_str()),selection.c_str());
       }
       else{

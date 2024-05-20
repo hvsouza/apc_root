@@ -45,7 +45,7 @@ void giveMeSphe(int channel = 0){
     dark.deltaminus = 0;
 
 
-    dark.check_selection = false; // uses(or not) variable `selection` to discard wvfs
+    dark.check_selection = true; // uses(or not) variable `selection` to discard wvfs
     dark.withfilter      = true; // Integrate in the filtered waveform
     dark.hnbins = 800;
     dark.hxmin = -2.5;

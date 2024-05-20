@@ -182,23 +182,22 @@ class DENOISE{
       Double_t sum = 0;
 
       if(myinte%2==0){ // if it is even, we insert the middle point, e.g. 8 interactions takes 4 before, mid, 4 later
-        midpoint = myinte/2+1;    //midpoint will be 5 here
-        width = myinte+1;
+        myinte+=1;
       }
-      else{
-        midpoint = (myinte-1)/2 + 1; // e.g. 9 interactions the midpoint will be 5
-        width = myinte;
-      }
+      midpoint = (myinte-1)/2; // e.g. 9 interactions the midpoint will be 5
+      width = myinte;
+
 
       for(Int_t i = 0; i < n; i++){
 
-        if(i<midpoint || i>(n-midpoint)){ // make it to start at i = 5 and finish at i = (3000-5) = 2995
+        if(i<midpoint || i>(n-(midpoint+1))){ // make it to start at i = 5 and finish at i = (3000-5) = 2995
           // res[i] = v[i];
           res[i] = 0;
         }
         else if (i > start && i < finish){
-          for(Int_t j = (i-midpoint); j < (i+midpoint); j++) { //first one: from j = (5-5); j<(5+5)
+          for(Int_t j = (i-midpoint); j < (i+midpoint+1); j++) { //first one: from j = (5-5); j<(5+5)
             sum = sum+v[j];
+
             //                 cout << sum << endl;
           }
           res[i] = (sum/width);
@@ -219,6 +218,13 @@ class DENOISE{
 
 
 
+class HeadersProtoDUNE{
+
+  public:
+
+    uint32_t EventSize;
+    uint64_t TriggerTimeTag;
+};
 
 
 class Headers{
@@ -237,7 +243,7 @@ class Read{
 
   private:
     int file_size = 0;
-    int expected_wvfs = 0;
+    vector<int> expected_wvfs;
   public:
   
   
@@ -249,10 +255,12 @@ class Read{
     Double_t dtime = 4; // steps (ADC's MS/s, 500 MS/s = 2 ns steps)
     Int_t nbits = 14;
     Int_t basebits = nbits;
-    Bool_t isBinary = false;
-    Bool_t saveFilter = false;
-    Bool_t with_headers = true;
-    Bool_t withTimestamp=true;
+    Bool_t isBinary         = false;
+    Bool_t saveFilter       = false;
+    Bool_t with_headers     = true;
+    Bool_t withTimestamp    = true;
+    Bool_t withRelativeTime = true;
+    Bool_t isCAEN           = true;
 
 
     Double_t startCharge = 3300;
@@ -267,6 +275,7 @@ class Read{
     Double_t timeflip = TMath::Power(2,32)-1;
     Double_t timeResolution = 8e-9; // 8 ns for 2 ns step, 16 ns for 4 ns step
     Double_t timestamp = 0;
+    Double_t timestamp2 = 0;
     Double_t deltastamp = 0;
     Double_t temptime = 0;
     Bool_t bitoverflow = false;
@@ -296,7 +305,7 @@ class Read{
     vector<Double_t> exclusion_baselines = {};
     map<string, Double_t> map_exclusion_threshold_baselines = {{"none",0}};
 
-    string other_ref_name = "channel_";
+    string reference_name_before_ch = "wave";
 
     Int_t nfiles = 1;
 
@@ -401,7 +410,7 @@ class Read{
       string dataname = "";
       Int_t aux = 0;
       // While for read the entire file
-      string wave_ref = "wave";
+      string wave_ref = reference_name_before_ch;
       int wavenum = 0;
       int temp = -1;
       vector<Int_t> tempch;
@@ -413,11 +422,6 @@ class Read{
         }
         int found  = dataname.find(wave_ref);
 
-        if (found==-1){ // for data from Esteban GUI (channel_X.dat)
-          wave_ref = other_ref_name;
-          found  = dataname.find(wave_ref);
-        }
-
         if(found==-1){
           tempch.push_back(aux);
         }
@@ -425,13 +429,16 @@ class Read{
         {
           found = found + wave_ref.length();
           string subdataname = dataname.substr(found);
-          size_t underscorePos = subdataname.find("_");
-          std::string channelNumberString = underscorePos != std::string::npos ? subdataname.substr(0, underscorePos) : subdataname;
+          int afterPos = subdataname.find("_");
+          if (afterPos == -1){
+            afterPos = subdataname.find(".");
+          }
+          std::string channelNumberString = afterPos != -1 ? subdataname.substr(0, afterPos) : subdataname;
           // wavenum = (int)dataname[found] - '0';
           try {
             wavenum = std::stoi(channelNumberString);
           } catch (std::invalid_argument const& e) {
-            std::cerr << "Invalid channel number format in file: " << dataname << std::endl;
+            std::cerr << "Invalid channel number format in file: " << dataname << " with substring " << subdataname << std::endl;
           }
           if(wavenum != temp){
             if (aux == 0) temp = wavenum;
@@ -446,6 +453,7 @@ class Read{
       channels = tempch;
       setup_baseline_thresholds();
       logfile.close();
+      expected_wvfs.resize(channels.size());
     }
   
     void adc_read_all_data(Bool_t do_get_ch_info = true){
@@ -682,6 +690,7 @@ class Read{
       Double_t init_time = 0;
       uint16_t valbin = 0;
       Headers headbin;
+      HeadersProtoDUNE headbinP;
       int nbytes = 4;
       Int_t headers_npoints = 0;
       Int_t headers_nwvfs = 0;
@@ -733,25 +742,71 @@ class Read{
         }
       }
 
+
       if(isBinary){
         if(with_headers){
-          fin[0].read((char *) &headbin, nbytes*6);
-          n_points = (headbin.EventSize-24)/2;
+          Int_t tmpnpoints = 0;
+          for(Int_t i = 0; i < (int)channels.size(); i++){
+            Double_t evtsize = 0;
+            if (isCAEN){
+              fin[i].read((char *) &headbin, nbytes*6);
+              tmpnpoints = (headbin.EventSize-24)/2;
+              if (tmpnpoints != 0){
+                n_points = tmpnpoints;
+              }
+              else if(tmpnpoints != n_points){
+                cout << "WARNING !!! different waveform length in files!!!" << endl;
+              }
+              evtsize = headbin.EventSize;
+            }
+            else{
+              fin[i].read((char *) &headbinP.EventSize, 4);
+              fin[i].read((char *) &headbinP.TriggerTimeTag, 8);
+              tmpnpoints = headbinP.EventSize;
+              if (tmpnpoints != 0){
+                n_points = tmpnpoints;
+              }
+              else if(tmpnpoints != n_points){
+                cout << "WARNING !!! different waveform length in files!!!" << endl;
+              }
+              evtsize = headbinP.EventSize*2+4+8;
+            }
 
-          // Get file size in bytes
-          fin[0].seekg(0, ios::end);
-          file_size = fin[0].tellg();
+            // Get file size in bytes
+            fin[i].seekg(0, ios::end);
+            file_size = fin[i].tellg();
 
-          expected_wvfs = file_size / headbin.EventSize;
+            expected_wvfs[i] = file_size / evtsize;
 
-          fin[0].clear();
-          fin[0].seekg(0);
+            fin[i].clear();
+            fin[i].seekg(0);
+          }
         }
       }
+      int ref_expected_wvfs = expected_wvfs[0];
+      bool sendwarning = false;
+      Int_t tmpstopEvent = stopEvent;
+      Bool_t forcestop = false;
       for(Int_t i = 0; i < (int)channels.size(); i++){
         avg[i].resize(n_points,0);
         ch[i]->Set_npts(n_points); // gain a few ns
+        if (expected_wvfs[i] != ref_expected_wvfs){
+          sendwarning = true;
+          forcestop = true;
+          stopEvent = (ref_expected_wvfs < expected_wvfs[i]) ? ref_expected_wvfs : expected_wvfs[i];
+        }
       }
+      if (forcestop){
+        if (OnlySomeEvents){
+          stopEvent = (stopEvent > tmpstopEvent) ? tmpstopEvent : stopEvent;
+        }
+        else{
+          OnlySomeEvents = true;
+        }
+      }
+      if (sendwarning)
+          cout << "Different number of waveforms... setting maximum at " << stopEvent << endl;
+      
       if(baselineTime > n_points*dtime){
         baselineTime = n_points*dtime;
       }
@@ -788,15 +843,32 @@ class Read{
           }
           else{
             if(with_headers){
-              fin[i].read((char *) &headbin, nbytes*6);
-              timestamp = headbin.TriggerTimeTag;
-              n_points = (headbin.EventSize-24)/2;
-              if(n_points != tempsize){
-                ch[i]->Set_npts(n_points);
-                avg[i].resize(n_points);
-                raw.resize(n_points);
-                delete[] filtered;
-                filtered = new Double_t[n_points];
+              if (isCAEN){
+                fin[i].read((char *) &headbin, nbytes*6);
+                timestamp = headbin.TriggerTimeTag;
+                n_points = (headbin.EventSize-24)/2;
+                if(n_points != tempsize){
+                  ch[i]->Set_npts(n_points);
+                  avg[i].resize(n_points);
+                  raw.resize(n_points);
+                  delete[] filtered;
+                  filtered = new Double_t[n_points];
+                }
+              }
+              else{
+                fin[i].read((char *) &headbinP.EventSize, 4);
+                fin[i].read((char *) &headbinP.TriggerTimeTag, 8);
+                timestamp = headbinP.TriggerTimeTag;
+
+                n_points = headbinP.EventSize;
+                if(n_points != tempsize){
+                  ch[i]->Set_npts(n_points);
+                  avg[i].resize(n_points);
+                  raw.resize(n_points);
+                  delete[] filtered;
+                  filtered = new Double_t[n_points];
+                }
+
               }
             }
 
@@ -824,28 +896,33 @@ class Read{
             // cout << "problems ??" << endl;
             break; // giving a 5 points relaxiation
           }
-          if(i==0){
+          if (withRelativeTime){
+            if(i==0){
 
-            if(timestamp<temptime){
-              deltastamp = (timeflip - temptime) + (timestamp-timeCicle); // same as 2^31 + temptime + timestamp
+              if(timestamp<temptime){
+                deltastamp = (timeflip - temptime) + (timestamp-timeCicle); // same as 2^31 + temptime + timestamp
+              }
+              else{
+                deltastamp = timestamp-temptime;
+              }
+
+              temptime = timestamp;
+
+              if(init_time!=0 && eventFile<maxEvents){
+                currentTime = currentTime+deltastamp*timeResolution;
+              }
+              else{
+                init_time = 1;
+              }
+              ch[i]->time = currentTime;
             }
             else{
-              deltastamp = timestamp-temptime;
-            }
+              ch[i]->time = ch[0]->time;
 
-            temptime = timestamp;
-
-            if(init_time!=0 && eventFile<maxEvents){
-              currentTime = currentTime+deltastamp*timeResolution;
             }
-            else{
-              init_time = 1;
-            }
-            ch[i]->time = currentTime;
           }
           else{
-            ch[i]->time = ch[0]->time;
-            
+            ch[i]->time = timestamp;
           }
 
           // if(!isBinary) ch[i]->time = event_time[aux_time];
@@ -887,7 +964,7 @@ class Read{
           tEvent+=1;
 
           if(static_cast<Int_t>(tEvent)%200==0) {
-            cout << "Events: " << tEvent << " out of " << expected_wvfs << "\r" << flush;
+            cout << "Events: " << tEvent << " out of " << ref_expected_wvfs << "\r" << flush;
           }
         }
 
@@ -937,6 +1014,7 @@ class Read{
       }
 //     cout << fastcomp << " " << slowcomp << endl;
       ch.fprompt = fastcomp/slowcomp;
+      if (!isCAEN) ch.fprompt = timestamp2;
     }
   
   

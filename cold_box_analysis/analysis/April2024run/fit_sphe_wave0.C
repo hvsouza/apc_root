@@ -7,7 +7,7 @@ void fit_sphe_wave0(Int_t ch = 0, Int_t rebin = 1, Double_t deconv = 4){
     
     Cal.rebin = rebin;
     Cal.channel = ch;
-    string histogram = "analyzed_" + to_string(ch);
+    string histogram = "analyzed";
     Cal.rootFile = "sphe_histograms_Ch"+to_string(ch)+".root";
 
     Cal.dtime = 2; // steps (ADC's MS/s, 500 MS/s = 2 ns steps)
