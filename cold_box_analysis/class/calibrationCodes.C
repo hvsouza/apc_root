@@ -1389,7 +1389,7 @@ class SPHE2{
       if(get_wave_form==true){
         fwvf = new TFile(Form("sphe_waveforms_Ch%i.root",channel),"RECREATE");
         twvf = new TTree("t1","mean waveforms");
-        if (mean_before < start) mean_before = start;
+        if (mean_before > start) mean_before = start;
         if (mean_after < finish) mean_after = finish+dtime;
       }
       else{ // in the case we are not taking waveform, I change this values for the same setup of integration
