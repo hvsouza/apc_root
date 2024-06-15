@@ -312,7 +312,7 @@ void convolution_fit(Int_t ch = 13, Bool_t checkSelection = true, Int_t offset =
     TCanvas *c = new TCanvas("c", "c",1920,0,1920,1080);
     c->cd(1);
     gm->Add(gconv,"L");
-    gm->Add(gwvf),"L";
+    gm->Add(gwvf,"L");
 
     gm->Draw("A");
     gm->GetXaxis()->SetTitle("Time (ns)");

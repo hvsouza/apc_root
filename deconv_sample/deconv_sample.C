@@ -15,7 +15,8 @@ void getSPEFFT(int ch){
   bool all_done = false;
   Int_t navg = 0;
   zpe = new ANALYZER("zpe");
-  zpe->setAnalyzer(Form("./sphe_waveforms_Ch%d.root",ch));
+  zpe->setAnalyzer(Form("./sphe_waveforms_big_Ch%d.root",ch));
+  if (zpe->channels.size()>1) zpe->setChannel(Form("Ch%d.", ch));
   string selection = "";
   TGraph *gsphe = nullptr;
   vector<Double_t> avgspe(zpe->n_points,0);
@@ -25,13 +26,62 @@ void getSPEFFT(int ch){
     selection = "";
   }
   else{
-    zpe->getSelection(Form("Ch%d.selection==1",ch));
+    // // For 1 pe
+    // zpe->getSelection(Form("Ch%d.selection==1",ch));
+    // cout << "Got selected by fit: " <<  zpe->lev->GetN() << endl;
+    // zpe->excludeByAmplitude(12, 0, 2000, 4, "higher"); // remove pretrigger with pulse
+    // zpe->excludeByAmplitude(12, 2650, 16000, 3.5, "higher"); // remove pretrigger with pulse
+    // zpe->excludeByAmplitude(2, 2000, 2500, 9, "higher"); // remove pretrigger with pulse
+    // zpe->excludeByAmplitude(2, 2400, 3500, 6.2, "higher"); // remove pretrigger with pulse
+    // zpe->excludeByAmplitude(12, 3400, 4400, 0.5, "higher"); // remove pretrigger with pulse
+    // cout << "Applied cut for amplitude" << endl;
+
+
+    // // For ~5 pe
+    // cout << "Got selected by fit: " <<  zpe->lev->GetN() << endl;
+    // zpe->genSelectByAmplitude(14,2160,2320, 24, "higher");
+    // zpe->excludeByAmplitude(14,0,2000, 3, "higher");
+    // zpe->excludeByAmplitude(14,6000,16000, 6, "higher");
+    // zpe->excludeByAmplitude(10,3000,5500, 1, "higher");
+    // zpe->excludeByAmplitude(10,0,2000, -4, "lower");
+    // zpe->excludeByAmplitude(10,2100,2500, 40, "higher");
+    // zpe->excludeByAmplitude(10,2400,16000, 30, "higher");
+    // zpe->excludeByAmplitude(10,3400,4200, -4, "higher");
+    // zpe->excludeByAmplitude(10,2150,2250, 15, "lower");
+    // zpe->excludeByAmplitude(10,3600,4200, -6.5, "higher");
+    // cout << "Applied cut for amplitude" << endl;
+
+    // // For ~big pe ch13 
+    // cout << "Got selected by fit: " <<  zpe->lev->GetN() << endl;
+    // zpe->genSelectByAmplitude(14,2100, 2300, 50, "higher");
+    // zpe->excludeByAmplitude(14,0,1920, 3, "higher");
+    // zpe->excludeByAmplitude(14,12000,16400, 5, "higher");
+    // zpe->excludeByAmplitude(14,8000,16400, -4, "lower");
+    // // zpe->excludeByAmplitude(10,3200,4400, -4, "higher");
+    // zpe->excludeByAmplitude(10,3400,4200, -12, "higher");
+    // zpe->excludeByAmplitude(10,2500,5000, -45, "lower");
+    // zpe->excludeByAmplitude(10,2000,5000, 120, "higher");
+    // zpe->excludeByAmplitude(10,4000,16400, 11, "higher");
+    // zpe->excludeByAmplitude(10,10400,14000, 7, "higher");
+    // zpe->excludeByAmplitude(4,4400,4900, -2, "higher");
+    // zpe->excludeByAmplitude(4,5400,5800, 6, "higher");
+    // zpe->excludeByAmplitude(4,7500, 9500, -2, "lower");
+    // zpe->excludeByAmplitude(4,2150, 2250, 60, "lower");
+
+    // // For ~big pe ch34
     cout << "Got selected by fit: " <<  zpe->lev->GetN() << endl;
-    zpe->excludeByAmplitude(filter, 0, 5800, 14, "higher"); // remove pretrigger with pulse
-    zpe->excludeByAmplitude(filter, 7200, 16000, 14, "higher"); // remove pretrigger with pulse
-    cout << "Applied cut for amplitude" << endl;
-    zpe->excludeByAmplitude(filter, 7200, 16000, -14, "lower"); // remove some undershoot
-    cout << "Applied cut for undershoot" << endl;
+    zpe->genSelectByAmplitude(14,2100, 2300, 65, "higher");
+    zpe->excludeByAmplitude(14,2100, 2300, 90, "higher");
+    // zpe->excludeByAmplitude(14,0,1920, 3, "higher");
+    // zpe->excludeByAmplitude(14,12000,16400, 6, "higher");
+    // zpe->excludeByAmplitude(14,8000,16400, -4.5, "lower");
+    // zpe->excludeByAmplitude(14,5000,16600, 14, "higher");
+    // zpe->excludeByAmplitude(10,3200,4400, -10, "higher");
+    // zpe->excludeByAmplitude(10,2600,2600, 40, "higher");
+    // zpe->excludeByAmplitude(10,2300,2500, 72, "higher");
+    zpe->excludeByAmplitude(10,2000,16600, -38, "lower");
+    zpe->excludeByAmplitude(10,6000,16600, -10, "lower");
+    zpe->excludeByAmplitude(10,6000,16600, 15, "higher");
 
     for (int i = 0; i < zpe->lev->GetN(); i++) {
       Int_t iev = zpe->lev->GetEntry(i);
@@ -51,14 +101,18 @@ void getSPEFFT(int ch){
     gsphe = new TGraph(zpe->n_points, &time[0], &avgspe[0]);
   }
   
-  zpe->persistence_plot(600,-100,500,filter,selection);
+  zpe->persistence_plot(600,-100,500,10,selection);
   zpe->getWaveFromGraph(gsphe);
+  zpe->baselineparameters.baselineStart      = 0;
+  zpe->baselineparameters.baselineTime       = 1800;
+  zpe->baselineparameters.exclusion_baseline = 6;
+  zpe->reval_baseline();
   zpe->getFFT();
-  gsphe->Draw("SAME");
+  zpe->drawGraph("SAME");
 }
-void deconv_sample(int ch=0, bool onlySPE=false){
-  Double_t reference_amplitude = 15;
-  vector<Double_t> range_amplitude = {4,5};
+void deconv_sample(int ch=34, bool onlySPE=false){
+  Double_t reference_amplitude = 6;
+  vector<Double_t> range_amplitude = {200,300};
   Int_t stop_at_event = -1;
 
   z = new ANALYZER("z");
@@ -80,11 +134,20 @@ void deconv_sample(int ch=0, bool onlySPE=false){
 
     wvf = z->ch[kch]->wvf;
     if(z->ch[kch]->selection == 1) continue;
-    Double_t max = z->getMaximum(6100, 6800);
+    Double_t max = z->getMaximum(1000, 1200);
     if(max/reference_amplitude < range_amplitude[0] || max/reference_amplitude > range_amplitude[1]) continue;
+    z->getMaximum(3000,16000);
+    if (z->temp_max > 300) continue;
+    z->getMinimum(5000,5100);
+    if (z->temp_min < -400) continue;
+    z->getMinimum(6100,6200);
+    if (z->temp_min < -20) continue;
+
+
     z->getFFT();
-    z->w->baseline=5800;
-    z->w->deconvolve(*z->w, *zpe->w, 1, "gaus");
+    z->w->maxBin = 2000/z->dtime;
+    z->w->baseline=1000;
+    z->w->deconvolve(*z->w, *zpe->w, 2.5, "gaus");
     if (stop_at_event >= i){
       z->drawGraph("");
       z->w->hwvf->SetLineColor(kRed);
@@ -97,6 +160,7 @@ void deconv_sample(int ch=0, bool onlySPE=false){
     }
     nav++;
   }
+
   Double_t *time = new Double_t[n_points];
   Double_t max = -1e12;
   Double_t maxpos = 0;
