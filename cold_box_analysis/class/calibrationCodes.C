@@ -431,8 +431,8 @@ class Calibration
       // hcharge->GetYaxis()->SetTitle("Normalized count");
       hcharge->GetYaxis()->SetTitle("# of events");
       hcharge->GetYaxis()->SetTitleOffset(1.0);
-      hcharge->GetXaxis()->SetTitle("Charge (ADC*nsec)");
-    
+      hcharge->GetXaxis()->SetTitle("Normalized charge [A.U]");
+
     
       TCanvas *c = new TCanvas("c", "c",1920,0,1920,1080);
 
@@ -633,6 +633,18 @@ class Calibration
 
       if(make_free_stddevs == true){
         setParametersFree(lastOneFree,lastOne);
+
+        // Set limit for the gaussians
+        Double_t refstd = 0;
+        for(Int_t i = 0; i<7+n_peaks*2; i++){
+          if (i == 2) refstd = lastOneFree->GetParameter(i); // set reference as from the baseline
+          if ((i == 5 || i == 8) | (i > 8 && (i-8)%2 == 0)){ // all other gaussians
+            if (lastOneFree->GetParameter(i) < 0.5*refstd){
+              lastOneFree->SetParameter(i, refstd);
+            }
+            lastOneFree->SetParLimits(i, 0.5*refstd, 5*refstd);
+          }
+        }
         // Int_t lastpar = 7+2*n_peaks-1;
         // Double_t lastGausUpperLim = 1.2*lastOneFree->GetParameter(lastpar);
         // Double_t lastGausLowerLim = 0.8*lastOneFree->GetParameter(lastpar);
@@ -1180,8 +1192,8 @@ class SPHE2{
 
 
     Double_t get_wave_form = false;    // for getting spe waveforms
-    Double_t mean_before   = 120;      // time recorded before and after the peak found
-    Double_t mean_after    = 1000;
+    Double_t mean_before   = 0;      // time recorded before and after the peak found
+    Double_t mean_after    = 0;
     Double_t sphe_charge   = 1809.52;  // charge of 1 and 2 p.e. (use fit_sphe.C)
     Double_t sphe_charge2  = 3425.95;
     Double_t sphe_std      = 500;      // std dev of the first peak (not needed of deltaminus != 0)
@@ -1377,6 +1389,8 @@ class SPHE2{
       if(get_wave_form==true){
         fwvf = new TFile(Form("sphe_waveforms_Ch%i.root",channel),"RECREATE");
         twvf = new TTree("t1","mean waveforms");
+        if (mean_before < start) mean_before = start;
+        if (mean_after < finish) mean_after = finish+dtime;
       }
       else{ // in the case we are not taking waveform, I change this values for the same setup of integration
         mean_before = (led_calibration) ? start : timeLow;

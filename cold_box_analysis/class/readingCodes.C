@@ -793,7 +793,9 @@ class Read{
         if (expected_wvfs[i] != ref_expected_wvfs){
           sendwarning = true;
           forcestop = true;
-          stopEvent = (ref_expected_wvfs < expected_wvfs[i]) ? ref_expected_wvfs : expected_wvfs[i];
+          if (expected_wvfs[i] < ref_expected_wvfs){
+            stopEvent = expected_wvfs[i];
+          }
         }
       }
       if (forcestop){

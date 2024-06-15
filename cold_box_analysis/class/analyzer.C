@@ -75,7 +75,7 @@ class ANALYZER{
       string selection = "";
       Double_t filter = 0;
       Double_t exclusion_baseline = 0;
-      Double_t exclusion_window = 0;
+      Double_t exclusion_window = 1000;
       Double_t validfraction = 3.;
       Int_t selection_base = 0;
       Bool_t use_bits = true;
@@ -1273,6 +1273,7 @@ class ANALYZER{
       if(!hbase){
         if(!h) {
           getMaxMin(range_base[0], range_base[1]);
+          
           Int_t min = (int)temp_min;
           Int_t max = (int)temp_max;
           Int_t nbins = (max-min);
