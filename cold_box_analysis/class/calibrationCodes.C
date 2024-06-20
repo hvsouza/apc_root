@@ -639,7 +639,7 @@ class Calibration
         for(Int_t i = 0; i<7+n_peaks*2; i++){
           if (i == 2) refstd = lastOneFree->GetParameter(i); // set reference as from the baseline
           if ((i == 5 || i == 8) | (i > 8 && (i-8)%2 == 0)){ // all other gaussians
-            if (lastOneFree->GetParameter(i) < 0.5*refstd){
+            if (lastOneFree->GetParameter(i) < 0.5*refstd | lastOneFree->GetParameter(i) > 5*refstd){
               lastOneFree->SetParameter(i, refstd);
             }
             lastOneFree->SetParLimits(i, 0.5*refstd, 5*refstd);
