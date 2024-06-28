@@ -933,7 +933,7 @@ class Calibration
       ltext = pleg->AddText(Form("#chi^{2} / ndf: %.2f/%d", lastOne->GetChisquare(), lastOne->GetNDF()));
       ltext = pleg->AddText(Form("Fitted gaussians: %d", n_peaks+2));
       ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(0),abs(lastOne->GetParameter(0)), lastOne->GetParError(0)));
-      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(1),abs(lastOne->GetParameter(1)), lastOne->GetParError(1)));
+      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(1),lastOne->GetParameter(1), lastOne->GetParError(1)));
       ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(2),abs(lastOne->GetParameter(2)), lastOne->GetParError(2)));
       ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(3),abs(lastOne->GetParameter(3)), lastOne->GetParError(3)));
       ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(4),abs(lastOne->GetParameter(4)), lastOne->GetParError(4)));
@@ -1386,11 +1386,12 @@ class SPHE2{
 
       // ____________________ Setting up what needs to be set ____________________ //
 
+      if (finish == 0) finish = dtime*n_points;
       if(get_wave_form==true){
         fwvf = new TFile(Form("sphe_waveforms_Ch%i.root",channel),"RECREATE");
         twvf = new TTree("t1","mean waveforms");
-        if (mean_before > start) mean_before = start;
-        if (mean_after < finish) mean_after = finish+dtime;
+        if (led_calibration && mean_before > start) mean_before = start;
+        if (led_calibration && mean_after < finish) mean_after = finish+dtime;
       }
       else{ // in the case we are not taking waveform, I change this values for the same setup of integration
         mean_before = (led_calibration) ? start : timeLow;
@@ -1696,7 +1697,7 @@ class SPHE2{
         }
         if(integrate_from_peak == true){
           z->getMaximum(crossPositive*dtime, candidatePosition*dtime, &denoise_wvf[0]);
-          peaksFound.push_back(z->temp_pos);
+          peaksFound.push_back(z->temp_pos/dtime);
         }
         else{
           peaksFound.push_back(peaksCross[i]) ;
