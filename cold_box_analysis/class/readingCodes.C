@@ -809,7 +809,7 @@ class Read{
       if (sendwarning)
           cout << "Different number of waveforms... setting maximum at " << stopEvent << endl;
       
-      if(baselineTime > n_points*dtime){
+      if(baselineTime > n_points*dtime || baselineTime == 0){
         baselineTime = n_points*dtime;
       }
 
