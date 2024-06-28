@@ -400,16 +400,16 @@ void ANALYZER::graphTimeTrigger(Int_t nstart, Int_t nfinish, TGraph *_gtemp)
 }
 
 
-void ANALYZER::check_filtering(vector<Int_t> filter_max_and_step, Int_t event, Int_t rebine, Double_t refFreq){
+void ANALYZER::check_filtering(vector<Double_t> filter_max_and_step, Int_t event, Int_t rebine, Double_t refFreq){
 
-  Int_t max_filter = filter_max_and_step[0];
-  Int_t step_filter = filter_max_and_step[1];
+  Double_t max_filter = filter_max_and_step[0];
+  Double_t step_filter = filter_max_and_step[1];
 
   if(max_filter == 0 || step_filter == 0){
     max_filter = 32;
     step_filter = 8;
   }
-  Int_t nf = max_filter/step_filter + 1;
+  Int_t nf = static_cast<Int_t>(max_filter/step_filter) + 1;
 
   string reference_filter = filter_type;
 
@@ -420,15 +420,15 @@ void ANALYZER::check_filtering(vector<Int_t> filter_max_and_step, Int_t event, I
   THStack *hs = new THStack("hs","hs");
   for(Int_t i = 0; i < nf; i++){
     getWaveform(event);
-    Int_t filter = 0 + step_filter*i;
+    Double_t filter = 0 + step_filter*i;
     filter_type = reference_filter;
     if(filter_type != "default") setFreqFilter(filter, filter_type);
     if(i!=0) applyDenoise(filter);
     gnf[i] = new TGraph(drawGraph());
-    gnf[i]->SetTitle(Form("Filter = %d", filter));
+    gnf[i]->SetTitle(Form("Filter = %.2f", filter));
     gm->Add(gnf[i]);
     getFFT();
-    hnf_fft[i] = (TH1D*)h->Clone(Form("h_nf_%d", filter));
+    hnf_fft[i] = (TH1D*)h->Clone(Form("h_nf_%.2f", filter));
     if(i == 0){
       href = (TH1D*)h->Clone("href");
     }
@@ -436,7 +436,7 @@ void ANALYZER::check_filtering(vector<Int_t> filter_max_and_step, Int_t event, I
     for(Int_t j = 0; j < hnf_fft[i]->GetNbinsX(); j++){
       hnf_fft[i]->SetBinContent(j+1, 20*log10(hnf_fft[i]->GetBinContent(j+1)));
     }
-    hnf_fft[i]->SetTitle(Form("Filter = %d", filter));
+    hnf_fft[i]->SetTitle(Form("Filter = %.2f", filter));
     hnf_fft[i]->Rebin(rebine);
     hs->Add(hnf_fft[i],"hist");
   }
