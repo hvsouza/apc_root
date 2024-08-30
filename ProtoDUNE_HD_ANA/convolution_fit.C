@@ -1,5 +1,5 @@
-#include "/home/henrique/Dropbox/APC_Paris/Root/cold_box_analysis/class/MYCODES.h"
-#include "/home/henrique/Dropbox/APC_Paris/Root/ProtoDUNE_HD_ANA/waveselector.C"
+#include "/eos/home-h/hvieirad/cold_box_analysis/apc_root/cold_box_analysis/class/MYCODES.h"
+#include "/eos/home-h/hvieirad/cold_box_analysis/apc_root/ProtoDUNE_HD_ANA/waveselector.C"
 #include <cstdio>
 
 ANALYZER *z = nullptr;
@@ -339,6 +339,7 @@ void convolution_fit(Int_t ch = 13, Bool_t checkSelection = true, Int_t offset =
 
     if (gROOT->IsBatch()){
       c->Print("conv_fit.png");
+      c->Print("conv_fit.root");
     }
 
     FILE *fout; 

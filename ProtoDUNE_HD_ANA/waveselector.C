@@ -1,4 +1,3 @@
-#include "/home/henrique/Dropbox/APC_Paris/Root/cold_box_analysis/class/MYCODES.h"
 
 ANALYZER *zpe = nullptr;
 
@@ -14,6 +13,9 @@ void waveselector(int ch, string filename, bool isSPE){
       break;
     case 1113:
       cuts = {65, 90, 10, -40, -5, 15};
+      break;
+    case 1225:
+      cuts = {65, 90, 6, -30 , -4.2 ,6};
       break;
     case 1225:
       cuts = {65, 90, 6, -30 , -4.2 ,6};
