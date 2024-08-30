@@ -1,4 +1,3 @@
-#include "/home/henrique/Dropbox/APC_Paris/Root/cold_box_analysis/class/MYCODES.h"
 
 ANALYZER *zpe = nullptr;
 
@@ -17,6 +16,9 @@ void waveselector(int ch, string filename, bool isSPE){
       break;
     case 1134:
       cuts = {65, 90, 20, -38, -10, 15};
+      break;
+    case 1225:
+      cuts = {65, 90, 6, -30 , -4.2 ,6};
       break;
     case 1245:
       cuts = {0, 0, 3, -6, -2.5, 3.2};
@@ -66,20 +68,20 @@ void waveselector(int ch, string filename, bool isSPE){
   if (!stop && cuts[cutidx]!=0)
   {
     myfilter = 10;
-    zpe->excludeByAmplitude(10,2000,16600, cuts[cutidx], "lower");
+    zpe->excludeByAmplitude(10,2000,zpe->n_points*zpe->dtime, cuts[cutidx], "lower");
   }
   else
     stop = true;
 
   cutidx++;
   if (!stop && cuts[cutidx]!=0)
-    zpe->excludeByAmplitude(10,6000,16600, cuts[cutidx], "lower");
+    zpe->excludeByAmplitude(10,6000,zpe->n_points*zpe->dtime, cuts[cutidx], "lower");
   else
     stop = true;
 
   cutidx++;
   if (!stop && cuts[cutidx]!=0)
-  zpe->excludeByAmplitude(10,6000,16600, cuts[cutidx], "higher");
+  zpe->excludeByAmplitude(10,6000,zpe->n_points*zpe->dtime, cuts[cutidx], "higher");
   else
     stop = true;
 
