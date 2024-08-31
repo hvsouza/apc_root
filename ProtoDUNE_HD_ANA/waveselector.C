@@ -17,9 +17,6 @@ void waveselector(int ch, string filename, bool isSPE){
     case 1225:
       cuts = {65, 90, 6, -30 , -4.2 ,6};
       break;
-    case 1225:
-      cuts = {65, 90, 6, -30 , -4.2 ,6};
-      break;
     case 1245:
       cuts = {0, 0, 3, -6, -2.5, 3.2};
       break;

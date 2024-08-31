@@ -1,5 +1,6 @@
 #include "/eos/home-h/hvieirad/cold_box_analysis/apc_root/cold_box_analysis/class/MYCODES.h"
 #include "/eos/home-h/hvieirad/cold_box_analysis/apc_root/ProtoDUNE_HD_ANA/waveselector.C"
+#include "/eos/home-h/hvieirad/cold_box_analysis/apc_root/ProtoDUNE_HD_ANA/control_duplicates.C"
 #include <cstdio>
 
 ANALYZER *z = nullptr;
@@ -173,6 +174,8 @@ void convolution_fit(Int_t ch = 13, Bool_t checkSelection = true, Int_t offset =
   Int_t nav = 0;
   Int_t nentries = z->nentries;
   TH2D *h2avg = new TH2D("h2avg", "h2avg", npoints, 0, npoints*dtime, 2000,-4000,8000);
+
+  vector<Int_t> idx_candidates;
   // nentries = 100;
   for(Int_t i = 0; i < nentries; i++){ // for(Int_t i = 0; i < 100; i++){ if(i%200==0) cout << "computing event " << i << " of " << z->nentries << "\r" << flush;
     z->getWaveform(i);
@@ -189,8 +192,15 @@ void convolution_fit(Int_t ch = 13, Bool_t checkSelection = true, Int_t offset =
     z->getMinimum(6100,6200);
     if (z->temp_min < -20) continue;
 
-    for(Int_t j = 0; j < npoints; j++){
+    idx_candidates.push_back(i);
 
+  }
+  vector<Int_t> idxes = control_duplicates(idx_candidates, z, ch);
+  sort(idxes.begin(),idxes.end());
+  for(Int_t i = 0; i < idxes.size(); i++){
+    z->getWaveform(idxes[i]);
+    wvf = z->ch[kch]->wvf;
+    for(Int_t j = 0; j < npoints; j++){
       // avg_wvf[j] +=  wvf[j];
       avg_wvf[j] +=  wvf[j];
       h2avg->Fill(j*dtime, wvf[j]);
