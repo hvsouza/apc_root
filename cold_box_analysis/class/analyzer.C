@@ -1464,12 +1464,14 @@ class ANALYZER{
     }
 
 
-    void printev(Int_t i, Int_t nev){
-      Int_t reference = 200;
-      if(nev<500){
+    void printev(Int_t i, Int_t nev, Int_t reference=200){
+      if(nev<2*reference){
         reference = 20;
       }
-      if(static_cast<Int_t>(i)%reference==0){
+      if (reference==1){
+        cout << i << " out of " << nev << "\r" << flush;
+      }
+      else if(static_cast<Int_t>(i)%reference==0){
         cout << i << " out of " << nev << "\r" << flush;
       }
     }
