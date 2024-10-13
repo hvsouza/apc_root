@@ -1,0 +1,8 @@
+file c5_NOLED_ch1_500us.dat
+RECORD_LENGTH 125000
+Resolution 12
+moving_average 50
+waveform_lower_limit 0
+waveform_upper_limit 135000
+baseline_lower_limit 0
+baseline_upper_limit 1100

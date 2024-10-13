@@ -1,0 +1,8 @@
+file wave0.dat
+RECORD_LENGTH 2500
+Resolution 14
+moving_average 50
+waveform_lower_limit 900
+waveform_upper_limit 1300
+baseline_lower_limit 0
+baseline_upper_limit 500
