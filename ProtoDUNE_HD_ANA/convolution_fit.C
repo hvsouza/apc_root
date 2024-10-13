@@ -1,6 +1,9 @@
-#include "/eos/home-h/hvieirad/cold_box_analysis/apc_root/cold_box_analysis/class/MYCODES.h"
-#include "/eos/home-h/hvieirad/cold_box_analysis/apc_root/ProtoDUNE_HD_ANA/waveselector.C"
-#include "/eos/home-h/hvieirad/cold_box_analysis/apc_root/ProtoDUNE_HD_ANA/control_duplicates.C"
+// #include "/eos/home-h/hvieirad/cold_box_analysis/apc_root/cold_box_analysis/class/MYCODES.h"
+// #include "/eos/home-h/hvieirad/cold_box_analysis/apc_root/ProtoDUNE_HD_ANA/waveselector.C"
+
+#include "/home/henrique/Dropbox/APC_Paris/Root/cold_box_analysis/class/MYCODES.h"
+#include "/home/henrique/Dropbox/APC_Paris/Root/ProtoDUNE_HD_ANA/waveselector.C"
+#include "/home/henrique/Dropbox/APC_Paris/Root/ProtoDUNE_HD_ANA/control_duplicates.C"
 #include <cstdio>
 
 ANALYZER *z = nullptr;
@@ -75,7 +78,7 @@ void shift_waveform(T *h, Int_t new_max, Bool_t rawShift = false){
   Int_t old_max = h->GetMaximumBin();
   if(rawShift) old_max = 0;
   Int_t old_ref = old_max - new_max;
-  TH1D *htemp = (TH1D*)h->Clone("htemp");
+  T *htemp = (T*)h->Clone("htemp");
   Double_t temp;
   if(old_ref<0){
     // cout << " case lower" << endl;
@@ -161,7 +164,6 @@ void convolution_fit(Int_t ch = 13, Bool_t checkSelection = true, Int_t offset =
   waveselector(ch, spe_file_name, isSPE);
   if (checkSelection) return;
 
-  // return;
    
   hsphe = new TH1D("hsphe","hsphe", npoints, 0, npoints*dtime);
   for(Int_t i = 0; i < npoints; i++){
@@ -169,6 +171,7 @@ void convolution_fit(Int_t ch = 13, Bool_t checkSelection = true, Int_t offset =
   }
   Double_t starting_max = hsphe->GetMaximumBin();
   shift_waveform(hsphe, starting_max-offset);
+  // return;
 
 
   Int_t nav = 0;
@@ -201,7 +204,6 @@ void convolution_fit(Int_t ch = 13, Bool_t checkSelection = true, Int_t offset =
     z->getWaveform(idxes[i]);
     wvf = z->ch[kch]->wvf;
     for(Int_t j = 0; j < npoints; j++){
-      // avg_wvf[j] +=  wvf[j];
       avg_wvf[j] +=  wvf[j];
       h2avg->Fill(j*dtime, wvf[j]);
     }
@@ -225,10 +227,9 @@ void convolution_fit(Int_t ch = 13, Bool_t checkSelection = true, Int_t offset =
   h2avg->Draw("colz");
   TGraph *gwvf = new TGraph(npoints, time, &avg_wvf[0]);
   gwvf->Draw("SAME");
+  h2avg->SetStats(0);
   h2avg->GetXaxis()->SetTitle("Time (ns)");
-  h2avg->GetYaxis()->SetTitle("Amplitude (A.U.)");
-
-
+  h2avg->GetYaxis()->SetTitle("Amplitude (ADC Channels)");
 
 
 
@@ -352,12 +353,12 @@ void convolution_fit(Int_t ch = 13, Bool_t checkSelection = true, Int_t offset =
       c->Print("conv_fit.root");
     }
 
-    FILE *fout; 
+    // FILE *fout; 
 
-    fout = fopen("convolution_output.txt", "w");
-    z->getWaveform(0);
-    fprintf(fout, "%.0f %.3f %.2f %.2f\n", z->ch[kch]->time, fLAr->GetParameter(1), fLAr->GetParameter(2), fLAr->GetParameter(3));
-    fclose(fout);
+    // fout = fopen("convolution_output.txt", "w");
+    // z->getWaveform(0);
+    // fprintf(fout, "%.0f %.3f %.2f %.2f\n", z->ch[kch]->time, fLAr->GetParameter(1), fLAr->GetParameter(2), fLAr->GetParameter(3));
+    // fclose(fout);
 
     // fout.open("spe_response.txt", ios::out);
     // for (auto y: ysphe){

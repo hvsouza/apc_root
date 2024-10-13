@@ -54,6 +54,7 @@ void waveselector(int ch, string filename, bool isSPE){
     else
       stop = true;
   }
+  stop = true;
 
   cutidx++;
   if (cuts[cutidx]!=0)
@@ -100,7 +101,7 @@ void waveselector(int ch, string filename, bool isSPE){
   selection="use_mine";
   gsphe = new TGraph(zpe->n_points, &time[0], &avgspe[0]);
 
-  zpe->persistence_plot(600,-100,500,10,selection);
+  zpe->persistence_plot(600,-100,500,0,selection);
   zpe->getWaveFromGraph(gsphe);
   zpe->baselineparameters.baselineStart      = 0;
   zpe->baselineparameters.baselineTime       = 1800;

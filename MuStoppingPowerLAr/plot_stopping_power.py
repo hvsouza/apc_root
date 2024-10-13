@@ -1,4 +1,5 @@
 import numpy as np
+import polars as pl
 import matplotlib.pyplot as plt
 
 import dunestyle.matplotlib as dunestyle
@@ -23,26 +24,29 @@ plt.rcParams.update({
                      'yaxis.labellocation': 'top',
                      })
 
-dt = np.dtype([
-    ('p',np.float32),
-    ('dEdx',np.float32)
-])
-data = np.genfromtxt("MuStoppingPowerLAr.csv", delimiter=',', dtype=dt)
-# data = np.fromfile("MuStoppingPowerLAr.txt", dtype=dt)
-
-E = np.sqrt((data['p']/1e3)**2+0.1057**2)
-plt.plot(E, data['dEdx']*1.396)
-plt.xlim(0.1,100)
-plt.ylim(1,20)
+data = pl.read_csv("MuStoppingPowerLAr.csv", separator=',')
+data = data.filter(
+    pl.col('T') <= 4e5,
+    pl.col('T') >= 10,
+)
+data = data.with_columns(
+    E = ((pl.col('p')/1e3)**2+0.1057**2).sqrt(),
+    R = pl.col('CSDA Range')*1.396
+)
+plt.plot(data['E'], data['dE/dx']*1.396)
+plt.xlim(0.8*data['E'][0],100)
+plt.ylim(1,100)
 plt.xscale('log')
 plt.yscale('log')
 plt.xlabel('Momentum [GeV/c]')
 plt.ylabel(r'Stopping power [MeV cm$^2$/g]')
 plt.show()
 
-for d in E:
+print(len(data['CSDA Range']))
+for d in data['dE/dx']:
     print(f"{d:.6}", end=', ')
 print()
+
 
 
 
