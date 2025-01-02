@@ -26,6 +26,7 @@ info = ""
 label = ""
 def retrieve_info(module, channel):
     dirs = sorted(glob(f"{info}/*"))
+    print(dirs)
     vgains = []
     snr = []
     drange = []
@@ -139,21 +140,21 @@ if __name__ == '__main__':
     plt.xlabel(r'$V_{GAIN} [V]$')
     plt.ylabel(r'SNR')
     plt.legend(loc='best', frameon=True)
-    plt.savefig(f'graphs/{module}_snr_vs_gain.png', dpi=200)
+    # plt.savefig(f'graphs/{module}_snr_vs_gain.png', dpi=200)
 
     plt.figure()
     make_plot(module, channels, vgains, spes)
     plt.xlabel(r'$V_{GAIN} [V]$')
     plt.ylabel(r'SPE amplitude [ADCs]')
     plt.legend(loc='best', frameon=True)
-    plt.savefig(f'graphs/{module}_spe_vs_gain.png', dpi=200)
+    # plt.savefig(f'graphs/{module}_spe_vs_gain.png', dpi=200)
 
     plt.figure()
     make_plot(module, channels, spes, snr)
     plt.xlabel(r'SPE amplitude [ADCs]')
     plt.ylabel(r'SNR')
     plt.legend(loc='best', frameon=True)
-    plt.savefig(f'graphs/{module}_snr_vs_spe.png', dpi=200)
+    # plt.savefig(f'graphs/{module}_snr_vs_spe.png', dpi=200)
 
     # plt.figure()
     # make_plot(module, channels, vgains, drange)
