@@ -4,6 +4,7 @@
 // Created: 2021
 // ________________________________________ //
 #include "MYCODES.h"
+#include <functional>
 
 
 class  MyFunctionObject{
@@ -162,6 +163,9 @@ class Calibration
 
     bool save_plot = false;
     string nameplotpng = "";
+    Double_t delta1; // dont change... automatic
+    Double_t delta2;
+
   
     // ____________________________________________________________________________________________________ //
     void fit_sphe_wave(string name, bool optimize = true){
@@ -681,6 +685,11 @@ class Calibration
         }
 
       }
+      else{
+        chi2 = lastOneFree->GetChisquare();
+        ndf = lastOneFree->GetNDF();
+        fit_status = TestFitSuccess();
+      }
 
 
       lastOne->SetNpx(1000);
@@ -743,8 +752,6 @@ class Calibration
       sphe_charge2 = lastOne->GetParameter(7);
       Double_t sphe_std = lastOne->GetParameter(5);
 
-      Double_t delta1;
-      Double_t delta2;
       if(deltaminus!=0)
       {
         delta1 = (sphe_charge2 - sphe_charge)/deltaminus;
@@ -1035,8 +1042,10 @@ class Calibration
         if(rootFile == "") this->rootFile = "sphe_histograms_Ch"+to_string(ch)+".root";
       }
 
+      bool tmpfree = this->make_free_stddevs;
       this->make_free_stddevs = true; // starts with false, if good fitting, change to true
       this->searchParameters(histogram.c_str(), deconv, true); // give a first search in the parameters.
+      this->make_free_stddevs = tmpfree;
 
       this->deltaplus = 1;
       this->deltaminus = 0;
@@ -1048,7 +1057,7 @@ class Calibration
       return ret;
     }
 
-    void sphe_fit_try_hard(TH1D *h, Int_t ch = 0, Int_t minrebin = 1, Int_t maxrebin = 2, Int_t max_sigma = 8, bool save_last = false, Double_t tolerance = 0.1){
+    void sphe_fit_try_hard(TH1D *h, Int_t ch = 0, Int_t minrebin = 1, Int_t maxrebin = 2, Double_t min_sigma = 1, Double_t max_sigma = 8, bool save_last = false, Double_t tolerance = 0.1, Double_t sigma_step = 1){
 
       gROOT->SetBatch(kTRUE);
       save_plot = false;
@@ -1058,28 +1067,32 @@ class Calibration
       vector<Double_t> ref = {0,0,0,0};
       Double_t best_fit = 1e12;
       Double_t best_snr = 0;
-      for (Int_t i = minrebin; i <= maxrebin; i*=2){
-        for(Int_t j = 1; j <= max_sigma; j++){
-          vals = perform_fit(ch,i, j, true, h);
+      for (Int_t rebin = minrebin; rebin <= maxrebin; rebin*=2){
+        for(Double_t deconv = min_sigma; deconv <= max_sigma; deconv+=sigma_step){
+          cout << "Trying rebin: " << rebin << " deconv: " << deconv << endl;
+          vals = perform_fit(ch,rebin, deconv, true, h);
           if (vals[0] > 0){
             Double_t goodf = vals[2]/vals[3];
             if (goodf < best_fit){
               best_fit = goodf;
-              values_best_fit = {static_cast<Double_t>(i), static_cast<Double_t>(j),vals[1],goodf};
+              values_best_fit = {static_cast<Double_t>(rebin), static_cast<Double_t>(deconv), vals[1], goodf};
             }
             if (vals[1] > best_snr){
               best_snr = vals[1];
-              values_best_snr = {static_cast<Double_t>(i), static_cast<Double_t>(j),vals[1],goodf};
+              values_best_snr = {static_cast<Double_t>(rebin), static_cast<Double_t>(deconv), vals[1], goodf};
             }
           }
         }
 
       }
-      cout << "values_best_snr: " << values_best_snr[0] << " ";
+      cout << "...............: rebin deconv snr chi2/ndf" << endl;
+      cout << "values_best_snr:" << " ";
+      cout << values_best_snr[0] << " ";
       cout << values_best_snr[1] << " ";
       cout << values_best_snr[2] << " ";
       cout << values_best_snr[3] << endl;
-      cout << "values_best_fit: " << values_best_fit[0] << " ";
+      cout << "values_best_fit:" << " ";
+      cout << values_best_fit[0] << " ";
       cout << values_best_fit[1] << " ";
       cout << values_best_fit[2] << " ";
       cout << values_best_fit[3] << endl;
@@ -1309,6 +1322,8 @@ class SPHE2{
 
     vector<string> discard_reason = {"Social distance", "Negative hits", "Too big"};
 
+    std::function<bool()> extraFilter; // Function to be used as filter..
+
     SPHE2(string m_name) : myname{m_name}{
       hbase        = new TH1D(Form("hbase_sphe_%s",myname.c_str()),"histogram for baseline",5*800,-400,400);
       hbase_smooth = new TH1D(Form("hbase_smooth_sphe_%s",myname.c_str()),"histogram for baseline smoothed",5*800,-400,400);
@@ -1321,8 +1336,13 @@ class SPHE2{
       smooted_wvf.resize(n_points);
       denoise_wvf.resize(n_points);
 
+      extraFilter = [this]() -> bool{ 
+        return true;
+      };
 
     }
+
+
     ~SPHE2(){
       // if(twvf) delete twvf;
       if(fout) fout->Close();
@@ -1339,6 +1359,18 @@ class SPHE2{
       // if(timeg) delete timeg;
     }
 
+
+    // Modify the lambda function at runtime
+
+    // Default filter function always return true...
+    // Change this function so it can perform filtering...
+    // Example:
+    // cal.modifyFunction([this]()) -> bool {
+    // return false;
+    // }
+    void modifyFunction(std::function<bool()> newFunc) {
+      extraFilter = newFunc;
+    }
 
     void searchForPeaks(){
     }
@@ -1469,17 +1501,23 @@ class SPHE2{
 
 
 
+
       Int_t nentries = z->nentries;
       if(just_a_test){nentries = just_this;}
       for(Int_t i = 0; i<nentries; i++){
         theGreatReset();
         z->getWaveform(i,kch); // get waveform by memory
         if(check_selection && z->ch[kch]->selection != 0) continue;
+
         
         if(i>nshow_finish && static_cast<Int_t>(i)%200==0){
           cout << i << " out of " << nentries << "\r" << flush;
         }
+
         processData();
+
+        // If extra filter is added... 
+        if (!extraFilter()) continue;
 
         if(method == "static"){
           searchForPeaks();
@@ -1669,6 +1707,7 @@ class SPHE2{
         peakmax = denoise_wvf[pos];
       }
       else{
+        cout << "WARNING!!! ................................ DONT!" << endl;
         peakmax = peakMax[pos];
       }
       if(peakmax > too_big){
@@ -1930,7 +1969,7 @@ class SPHE2{
             negativeHits++;
           }
           
-          if(negativeHits >= maxHits){
+          if(negativeHits >= maxHits || val > too_big){
             get_this_wvf = false;
             get_this_charge = false;
             fill_discarded(peakPosIdx, smooted_wvf[peakPosIdx], res*dtime, 1);
@@ -2101,10 +2140,17 @@ class SPHE2{
       fsphe.close();
 
 
+      if(deltaminus!=0)
+      {
+        delta1 = (sphe_charge2 - sphe_charge)/deltaminus;
+        delta2 = deltaplus*(sphe_charge2 - sphe_charge);
+      }
+      else{
+        delta1 = (sphe_charge-deltaplus*sphe_std);
+        delta2 = (sphe_charge+deltaplus*sphe_std);
+      }
 
     }
-
-
 
 };
 
