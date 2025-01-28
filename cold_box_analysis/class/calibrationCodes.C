@@ -118,11 +118,15 @@ class Calibration
     Double_t sigma1 = 400;
   
     Double_t startpoint = 0.001;
+    Double_t lambda = 1;
     Double_t poisson_ratio = 3.;
     TF1 *faux = nullptr;
   
     Double_t xmin = -10000;
     Double_t xmax = 40000;
+    bool fixxmin = false;
+    bool fixxmax = false;
+
 
     Double_t deltaplus=1;
     Double_t deltaminus=0;
@@ -160,13 +164,24 @@ class Calibration
     Double_t chi2 = 0;
     Double_t ndf = 0;
     Int_t lastOneAttempts = 2;
+    bool fix_baseline_from_second_general_fit = false;
 
     bool save_plot = false;
-    string nameplotpng = "";
+    string nameplotsave = "";
     Double_t delta1; // dont change... automatic
     Double_t delta2;
 
-  
+
+    string forcetype = "n"; // [n]o force, force [f]it, force [s]nr
+
+    // Debug level:
+    // 0 none
+    // 1 first general fit
+    // 2 second general fit
+    // 3 first lastOne fit wiht fix parameters
+
+    Int_t debug_level = 0;
+
     // ____________________________________________________________________________________________________ //
     void fit_sphe_wave(string name, bool optimize = true){
 
@@ -223,12 +238,14 @@ class Calibration
       Int_t nfound = 0;
       Int_t bin;
       // const Int_t nbins = 1024;
-      xmin = h->GetXaxis()->GetXmin();
-      xmax = h->GetXaxis()->GetXmax();
+      if (!fixxmin)
+        xmin = h->GetXaxis()->GetXmin();
+      if (!fixxmax)
+        xmax = h->GetXaxis()->GetXmax();
       Double_t a;
       h->SetTitle("High resolution peak searching, number of iterations = 3");
       h->GetXaxis()->SetRange(1,nbins);
-      TH1D *d = new TH1D("d","",nbins,xmin,xmax);
+      TH1D *d = new TH1D("d","",nbins,h->GetXaxis()->GetXmin(), h->GetXaxis()->GetXmax());
 
       for (Int_t i = 0; i < nbins; i++) source[i]=h->GetBinContent(i + 1);
 
@@ -261,6 +278,8 @@ class Calibration
 
       Double_t upplim_gaus_base = fPositionX[0]+(3./4)*(fPositionX[1]-fPositionX[0])/2;
       Double_t lowlim_gaus_base = fPositionX[0]-(fPositionX[1]-fPositionX[0])*2;
+      if (lowlim_gaus_base < xmin)
+        lowlim_gaus_base = xmin;
       faux = new TF1("faux","gaus(0)",lowlim_gaus_base,upplim_gaus_base);
       faux->SetParameters(fPositionY[0],fPositionX[0],(fPositionX[1]-fPositionX[0])/sqrt(2));
       h->Fit("faux","R0QW");
@@ -321,7 +340,8 @@ class Calibration
         if(n_peaks > 10){ // this value was 18 at some point
           n_peaks = 10;
         }
-        xmax = (n_peaks+1)*(fPositionX[1]-fPositionX[0]) + fPositionX[0];
+        if (!fixxmax)
+          xmax = (n_peaks+1)*(fPositionX[1]-fPositionX[0]) + fPositionX[0];
       }
 
 
@@ -338,7 +358,7 @@ class Calibration
 
       Double_t lambda1 = -TMath::Log(prob_zeros);
       Double_t lambda2 = h->GetMean()/mean1;
-      Double_t lambda = lambda1;
+      lambda = lambda1;
 
       Double_t peak_by_formula1 = startpoint/(pow(poisson(lambda1,npois-1)/poisson(lambda1,npois),npois-2));
       Double_t peak_by_formula2 = startpoint/(pow(poisson(lambda2,npois-1)/poisson(lambda2,npois),npois-2));
@@ -350,7 +370,7 @@ class Calibration
 
       Double_t poisson2 = poisson(lambda,2);
       Double_t poisson3 = poisson(lambda,3);
-      Double_t poisson_ratio = poisson2/poisson3;
+      poisson_ratio = poisson2/poisson3;
 
 
       if(debug)
@@ -479,6 +499,10 @@ class Calibration
         func->SetParameter((i+6+aux),(i+1)*(mean1 - mean0) + mean1);
         aux++;
         func->SetParameter((i+6+aux),sqrt(i+2)*sigma1);
+        
+        Double_t poisson2 = poisson(lambda,i+2);
+        Double_t poisson3 = poisson(lambda,i+3);
+        poisson_ratio = poisson2/poisson3;
         temp_startpoint = temp_startpoint/poisson_ratio;
       }
       func->SetParName(4,"#mu");
@@ -492,9 +516,9 @@ class Calibration
       }
     
       if(fixZero){
-        func->FixParameter(0,0);
-        func->FixParameter(1,0);
-        func->FixParameter(2,1);
+        func->FixParameter(0,peak0);
+        func->FixParameter(1,mean0);
+        func->FixParameter(2,sigma0);
       }
     
       getMyParameters(peaks,stdpeaks,func);
@@ -504,13 +528,12 @@ class Calibration
       //hcharge->Scale(scale);
       hcharge->Draw("hist");
       // hcharge->Fit("func","R0Q");
+
       // Debug level:
       // 0 none
       // 1 first general fit
       // 2 second general fit
       // 3 first lastOne fit wiht fix parameters
-
-      Int_t debug_level = 0;
       if (debug_level == 1){
         func->Draw("SAME");
         return;
@@ -591,6 +614,12 @@ class Calibration
       }
       fit_status = -1;
 
+      if (fix_baseline_from_second_general_fit){
+        lastOne->FixParameter(0,abs(lastOne->GetParameter(0)));
+        lastOne->FixParameter(1,lastOne->GetParameter(1));
+        lastOne->FixParameter(2,lastOne->GetParameter(2));
+      }
+
       string lastOneFitOpt = "RQ0";
       if (!quitemode) lastOneFitOpt = "R";
       for(Int_t ktemp = 0; ktemp < lastOneAttempts; ktemp++)
@@ -633,7 +662,7 @@ class Calibration
       MyFunctionFree MyFuncFree;
       MyFuncFree.n_peaks = n_peaks;
 
-      TF1 *lastOneFree = new TF1("lastOneFree",MyFuncFree,xmin,xmax,7+n_peaks*2);
+      TF1 *lastOneFree = new TF1("lastOneFree",MyFuncFree,xmin,xmax,6+n_peaks*2);
 
       if(make_free_stddevs == true){
         setParametersFree(lastOneFree,lastOne);
@@ -698,7 +727,8 @@ class Calibration
       hcharge->Draw("hist");
       
 
-      xmin = fu[0]->GetParameter(1)-5*abs(fu[0]->GetParameter(2));
+      if (!fixxmin)
+        xmin = fu[0]->GetParameter(1)-5*abs(fu[0]->GetParameter(2));
 
       hcharge->GetXaxis()->SetRangeUser(1.2*xmin,1.1*xmax);
       // hcharge->StatOverflows(kTRUE);
@@ -907,7 +937,7 @@ class Calibration
         Double_t threeIntegral = threeGaus->Integral(xmin,xmax);
         
 
-        Double_t lambda = -TMath::Log(zeroIntegral/totalIntegral);
+        lambda = -TMath::Log(zeroIntegral/totalIntegral);
         
         cout << "Lambda = " << lambda << endl;
         
@@ -953,9 +983,9 @@ class Calibration
       pleg->Draw();
       // ____________________________ FinishDraw legend by hand ____________________________ //
 
-      if (nameplotpng == "") nameplotpng = histogram + ".png";
+      if (nameplotsave == "") nameplotsave = histogram + ".png";
       if (save_plot)
-          c->Print(nameplotpng.c_str());
+          c->Print(nameplotsave.c_str());
       if(quitemode)
       {
         delete c;
@@ -1104,7 +1134,10 @@ class Calibration
           string Userchoise;
           cout << "Not cool!!" << endl;
           cout << "You have to pick one: SNR [s], Fit[f] ";
-          cin >> Userchoise;
+          if (forcetype == "n")
+            cin >> Userchoise;
+          else
+            Userchoise = forcetype;
           if (Userchoise == "s")
           {
             cout << "Using best for SNR" << endl;
@@ -1562,7 +1595,15 @@ class SPHE2{
         TGraph *gmean = new TGraph(npts_wvf,timeg,&mean_waveform[0]);
         fwvf->WriteObject(gmean,"mean","TObject::kOverwrite");
         if (z->thead){
+          vector<Double_t> *exclusion_baselines_ptr = nullptr;
+          Int_t mycurrentidx = z->kch;
+          z->thead->SetBranchAddress("exclusion_baselines",&exclusion_baselines_ptr);
+          z->thead->GetEntry(0);
+          vector<Double_t> exclusion_baselines = { exclusion_baselines_ptr->at(mycurrentidx) };
+          z->thead->SetBranchStatus("exclusion_baselines", 0);
           auto newtree = z->thead->CloneTree();
+          auto b = newtree->Branch("exclusion_baselines",&exclusion_baselines);
+          b->Fill();
           fwvf->WriteObject(newtree,"head","TObject::kOverwrite");
         }
         cout << "A total of " << naverages << " waveforms where found "<< endl;
