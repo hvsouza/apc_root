@@ -9,28 +9,26 @@
 void adjust_parameters(SPHE2 &dark, int channel){
     switch (channel){
         case 0:
-            dark.sphe_charge   = 4918.69; 
-            dark.sphe_charge2  = 10071.1;
-            dark.sphe_std      = 658.491;
-
-            dark.hnbins = 400;
-            dark.hxmin = -10e3;
-            dark.hxmax = 60e3;
+            dark.tolerance = 2.5;
             dark.spe_max_val_at_time_cut = 7;
             dark.time_cut = 3500; 
             dark.cut_with_filtered = true;
             break;
         case 1:
-            dark.sphe_charge   = 4090.98; 
-            dark.sphe_charge2  = 8496.92;
-            dark.sphe_std      = 982.003;
-
-            dark.hnbins = 400;
-            dark.hxmin = -10e3;
-            dark.hxmax = 60e3;
-            dark.spe_max_val_at_time_cut = 6.2;
+            dark.tolerance = 3.2;
+            dark.spe_max_val_at_time_cut = 6.5;
             dark.time_cut = 3500;
             dark.cut_with_filtered = true;
+            break;
+        case 6:
+            dark.timeHigh = 1000;
+            dark.interactions = 60;
+            dark.tolerance = 2.1;
+            break;
+        case 7:
+            dark.timeHigh = 1000;
+            dark.interactions = 60;
+            dark.tolerance = 1.5;
             break;
             
     }
@@ -48,7 +46,7 @@ void giveMeSphe_20us_search(int channel = 0){
     dark.channel         = channel;
     dark.rootfile        = "../analyzed.root";
 
-    dark.start  = 8000;            // start the search for peaks or start the integration (led)
+    dark.start  = 7500;            // start the search for peaks or start the integration (led)
     dark.finish = 12000;        // fisish the search or finish the integration (led)
 
     dark.filter = 12;   // one dimentional denoise filter (0 equal no filder)
@@ -99,7 +97,7 @@ void giveMeSphe_20us_search(int channel = 0){
                                // `fix` will not evaluate baseline and use raw threshold
                                // See tolerance, baselineTime and baselineLimit above
 
-    // adjust_parameters(dark, channel);
+    adjust_parameters(dark, channel);
     dark.giveMeSphe();
 
 

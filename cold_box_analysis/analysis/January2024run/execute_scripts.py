@@ -16,7 +16,7 @@ if __name__ == "__main__":
     parse.add_argument("-q", "--q", action="store_true", help="quite after")
     parse.add_argument("-n", "--dry",  action="store_true", help='Dry run')
     parse.add_argument('-ch','--channels', type=int, nargs="+", help="Channels to look")
-    args = vars(parse.parse_args())
+    parse.add_argument('-nwvfs','--nwvfs', type=int, help="Total number of waveforms..", default=-1)
     args = vars(parse.parse_args())
 
     folder = args['folder']
@@ -44,26 +44,25 @@ if __name__ == "__main__":
     results = {}
     for f in files:
         # print(f"Running over {f}")
-        channels = []
-        if not no_channel:
-            wavefiles = sorted(glob(f"{f}/*_wave*.dat"))
-            for w in wavefiles:
-                channels.append(re.findall(r"wave(\d+)",w)[0])
+        channels_there = []
+        wavefiles = sorted(glob(f"{f}/*_wave*.dat"))
+        for w in wavefiles:
+            channels_there.append(int(re.findall(r"wave(\d+)",w)[0]))
 
+        if not wavefiles:
+            wavefiles = sorted(glob(f"{f}/../sphe_h*.root"))
             if not wavefiles:
-                wavefiles = sorted(glob(f"{f}/../sphe_h*.root"))
-                for w in wavefiles:
-                    channels.append(re.findall(r"sphe_histograms_Ch(\d+)",w)[0])
+                wavefiles = sorted(glob(f"{f}/sphe_h*.root"))
+            for w in wavefiles:
+                channels_there.append(int(re.findall(r"sphe_histograms_Ch(\d+)",w)[0]))
 
-            if not channels:
-                # print("No file found :o", f)
-                continue
-            # print(channels)
-        else:
-            if args['channels'] is not None:
-                channels = args['channels']
-            else:
-                channels.append('')
+        if not no_channel:
+            channels = channels_there
+        if args['channels'] is not None:
+            channels = args['channels']
+            # if not channels_there:
+            #     channels_there = channels
+            channels = [ch for ch in channels if ch in channels_there]
 
         p = re.findall(r"run(\d+)_", f)
         run = int(p[0])
@@ -80,9 +79,9 @@ if __name__ == "__main__":
                 except:
                     continue
 
-        # if npts==10000:
-        #     os.chdir(maindir)
-        #     continue
+        if npts!=args['nwvfs'] and args['nwvfs']!=-1:
+            os.chdir(maindir)
+            continue
         print(f"Inside {f}")
 
 
@@ -95,20 +94,20 @@ if __name__ == "__main__":
             if dry:
                 print(command)
                 continue
-            ret = subprocess.run(command)
-            # ret = subprocess.run(command, stdout=subprocess.PIPE)
-            # dout = ret.stdout.decode('utf-8')
-            # dout = StringIO(dout)
-            # for l in dout.readlines():
-            #     p = re.findall(r"A: (.+)", l)
-            #     if p:
-            #         results[run] = float(p[0])
+            # ret = subprocess.run(command)
+            ret = subprocess.run(command, stdout=subprocess.PIPE)
+            dout = ret.stdout.decode('utf-8')
+            dout = StringIO(dout)
+            for l in dout.readlines():
+                p = re.findall(r"A: (.+)", l)
+                if p:
+                    results[run] = float(p[0])
             
         os.chdir(maindir)
 
 
-    # for r, v in results.items():
-    #     print(f"{v}")
+    for r, v in results.items():
+        print(f"{r}, {v}")
 
 
     
