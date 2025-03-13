@@ -164,7 +164,7 @@ class WIENER{
       // cutoff_frequency is the cutoff frequency in MHz (or your unit set)
       if (filter_type == "gaus")
       {
-        cutoff_frequency = sqrt(sqrt(2))*cutoff_frequency;
+        cutoff_frequency = cutoff_frequency/sqrt(log(2));
         f_filter = new TF1("filter","TMath::Gaus(x,[0],[1])",0,frequency);	// A gaussian filter
         // the standard deviation must be sqrt(sqrt(2))* the cutoff frequen, so when x = cutoff frequency Vo/Vi = 0.7
         f_filter->SetParameters(0,cutoff_frequency);
