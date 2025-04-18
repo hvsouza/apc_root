@@ -31,7 +31,7 @@ data = data.filter(
 )
 data = data.with_columns(
     E = ((pl.col('p')/1e3)**2+0.1057**2).sqrt(),
-    R = pl.col('CSDA Range')*1.396
+    R = pl.col('CSDA Range')/1.396
 )
 plt.plot(data['E'], data['dE/dx']*1.396)
 plt.xlim(0.8*data['E'][0],100)
@@ -46,6 +46,10 @@ print(len(data['CSDA Range']))
 for d in data['dE/dx']:
     print(f"{d:.6}", end=', ')
 print()
+
+plt.figure()
+plt.plot(data['R'], data['T'])
+plt.show()
 
 
 
