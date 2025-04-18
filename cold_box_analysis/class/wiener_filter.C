@@ -357,29 +357,54 @@ class WIENER{
 
 
 
+//     template <class T>
+//     void shift_waveform(T *h, Int_t new_max, Bool_t rawShift = false){
+//       Int_t old_max = h->GetMaximumBin();
+//       if(rawShift) old_max = 0;
+//       Int_t old_ref = old_max - new_max;
+//       TH1D *htemp = (TH1D*)h->Clone("htemp");
+//       Double_t temp;
+//       if(old_ref<0){
+//         // cout << " case lower" << endl;
+//         old_ref = npts-(new_max-old_max);
+//       }
+//       for(Int_t i = 1; i<npts-(old_ref); i++){
+//         temp = htemp->GetBinContent(old_ref+i);
+//         h->SetBinContent(i,temp);
+//       }
+//       Int_t aux = 1;
+//       for(Int_t i = npts-(old_ref); i<=npts; i++){
+//         temp = htemp->GetBinContent(aux);
+//         h->SetBinContent(i,temp);
+//         aux++;
+//       }
+//       delete htemp;
+//     }
+
+
     template <class T>
-    void shift_waveform(T *h, Int_t new_max, Bool_t rawShift = false){
-      Int_t old_max = h->GetMaximumBin();
-      if(rawShift) old_max = 0;
-      Int_t old_ref = old_max - new_max;
-      TH1D *htemp = (TH1D*)h->Clone("htemp");
-      Double_t temp;
-      if(old_ref<0){
-        // cout << " case lower" << endl;
-        old_ref = npts-(new_max-old_max);
+      void shift_waveform(T *h, Int_t new_max_or_shift, Bool_t rawShift = false){
+        Int_t old_max = h->GetMaximumBin();
+        Int_t shift = new_max_or_shift - old_max;
+        if (shift < 0) shift = npts + shift;
+
+        if(rawShift) shift = new_max_or_shift;
+
+        vector<double> vtemp(npts);
+        for(Int_t i = 0; i<npts; i++){
+          vtemp[i] = h->GetBinContent(i+1);
+        }
+        // Normalize shift to always be within valid range
+        shift = ((shift % npts) + npts) % npts;
+        if (shift>0){
+          std::rotate(vtemp.begin(), vtemp.end() - shift, vtemp.end());
+        }
+
+        for (Int_t i = 0; i < npts; i++) {
+          h->SetBinContent(i+1, vtemp[i]);
+        }
       }
-      for(Int_t i = 1; i<npts-(old_ref); i++){
-        temp = htemp->GetBinContent(old_ref+i);
-        h->SetBinContent(i,temp);
-      }
-      Int_t aux = 1;
-      for(Int_t i = npts-(old_ref); i<=npts; i++){
-        temp = htemp->GetBinContent(aux);
-        h->SetBinContent(i,temp);
-        aux++;
-      }
-      delete htemp;
-    }
+
 
 
 

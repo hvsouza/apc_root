@@ -274,6 +274,18 @@ class ANALYZER{
       for (Int_t i = 0; i < nchannels; i++) bt[i] = b[i];
     }
 
+    void setAnalyzer(Int_t n_points, Int_t nchannels, Double_t dtime){
+      this->n_points = n_points;
+      this->nchannels = nchannels;
+      this->dtime = dtime;
+      ch.resize(nchannels);
+      for (Int_t i = 0; i < nchannels; i++) {
+        ch[i] = new ADC_DATA();
+        ch[i]->Set_npts(n_points);
+      }
+      setEmpty();
+    }
+
     void recreateFile();
 
     // _________________________ ________________________________________ _________________________ //
