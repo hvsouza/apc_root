@@ -20,6 +20,7 @@ class WIENER{
     Double_t baseline = 0;
 
     TH1D *hfft = nullptr;
+    TH1D *hphase = nullptr;
     TH1D *hPSD = nullptr;
     TH1D *hwvf = nullptr;
     Double_t powerSpectrum = 0;
@@ -54,7 +55,14 @@ class WIENER{
         spec_re[k] = spec[k].Re();
         spec_im[k] = spec[k].Im();
       }
+    }
 
+    void scale(TH1* hscale){
+      for(Int_t k=0; k<npts/2+1; k++){
+        spec[k] *= hscale->GetBinContent(k+1);
+        spec_re[k] = spec[k].Re();
+        spec_im[k] = spec[k].Im();
+      }
     }
 
     // h is the s.p.e. response
@@ -164,7 +172,7 @@ class WIENER{
       // cutoff_frequency is the cutoff frequency in MHz (or your unit set)
       if (filter_type == "gaus")
       {
-        cutoff_frequency = cutoff_frequency/sqrt(log(2));
+        cutoff_frequency = cutoff_frequency/sqrt(log(2.0));
         f_filter = new TF1("filter","TMath::Gaus(x,[0],[1])",0,frequency);	// A gaussian filter
         // the standard deviation must be sqrt(sqrt(2))* the cutoff frequen, so when x = cutoff frequency Vo/Vi = 0.7
         f_filter->SetParameters(0,cutoff_frequency);
@@ -224,14 +232,16 @@ class WIENER{
       flar->SetParName(2,"A_{S}");
       flar->SetParName(3,"#tau_{S}");
 
-      flar_gaus = new TF1("flar_gaus","([0]*exp(-(x-[5])/[1])*exp([4]*[4]/(2*[1]*[1])))*TMath::Erfc((([5]-x)/[4]+[4]/[1])/TMath::Power(2,0.5))/2. + ([2]*exp(-(x-[5])/[3])*exp([4]*[4]/(2*[3]*[3])))*TMath::Erfc((([5]-x)/[4]+[4]/[3])/TMath::Power(2,0.5))/2.",0,npts*step);
-      flar_gaus->SetParameters(100,10,3,1400,20,maxBin*step);
-      flar_gaus->SetParName(0,"A_{F}");
+      // flar_gaus = new TF1("flar_gaus","([0]*exp(-(x-[5])/[1])*exp([4]*[4]/(2*[1]*[1])))*TMath::Erfc((([5]-x)/[4]+[4]/[1])/TMath::Power(2,0.5))/2. + ([2]*exp(-(x-[5])/[3])*exp([4]*[4]/(2*[3]*[3])))*TMath::Erfc((([5]-x)/[4]+[4]/[3])/TMath::Power(2,0.5))/2.",0,npts*step);
+      flar_gaus = new TF1("flar_gaus","[0]*(  (([2]/[1])*exp(-(x-[5])/[1])*exp([4]*[4]/(2*[1]*[1])))*TMath::Erfc((([5]-x)/[4]+[4]/[1])/TMath::Power(2,0.5))/2. + ((1-[2])/[3])*(exp(-(x-[5])/[3])*exp([4]*[4]/(2*[3]*[3])))*TMath::Erfc((([5]-x)/[4]+[4]/[3])/TMath::Power(2,0.5))/2. )",0,npts*step);
+      flar_gaus->SetParameters(1e5,10,0.3,1400,20,maxBin*step);
+      flar_gaus->SetParName(0,"A");
       flar_gaus->SetParName(1,"#tau_{F}");
-      flar_gaus->SetParName(2,"A_{S}");
+      flar_gaus->SetParName(2,"A_{p}");
       flar_gaus->SetParName(3,"#tau_{S}");
       flar_gaus->SetParName(4,"#sigma");
       flar_gaus->SetParName(5,"t_{0}");
+      flar_gaus->SetParLimits(2, 0, 1);
     }
     void frequency_deconv(WIENER y, WIENER G, Double_t cutoff_frequency=0, string filter_type = "gaus"){
 
@@ -299,6 +309,7 @@ class WIENER{
         if(cutoff_frequency!=0) gaus_blur = f_filter->Eval(convert_freq*k);
         if(!(h.spec[k].Re()==0 && h.spec[k].Im()== 0)){
           spec[k] = y.spec[k]*gaus_blur/h.spec[k];
+          spec[k] = spec[k]*factor; // Because it was canceled in the division
         }
         else{
           spec[k] = 0;
@@ -324,9 +335,10 @@ class WIENER{
 
       for(Int_t i = 0; i<npts; i++){
         res[i] = hfinal->GetBinContent(i+1);
-        hwvf->SetBinContent(i+1,res[i]);
+        hwvf->SetBinContent(i+1,res[i]/2);
       }
 
+      // shift_waveform(hwvf, h.maxBin, true);
       shift_waveform(hwvf,y.maxBin);
       Double_t bl = 0;
       Double_t auxbaseline = 0;
@@ -350,36 +362,6 @@ class WIENER{
       delete hfinal;
    
     }
-
-
-
-
-
-
-
-//     template <class T>
-//     void shift_waveform(T *h, Int_t new_max, Bool_t rawShift = false){
-//       Int_t old_max = h->GetMaximumBin();
-//       if(rawShift) old_max = 0;
-//       Int_t old_ref = old_max - new_max;
-//       TH1D *htemp = (TH1D*)h->Clone("htemp");
-//       Double_t temp;
-//       if(old_ref<0){
-//         // cout << " case lower" << endl;
-//         old_ref = npts-(new_max-old_max);
-//       }
-//       for(Int_t i = 1; i<npts-(old_ref); i++){
-//         temp = htemp->GetBinContent(old_ref+i);
-//         h->SetBinContent(i,temp);
-//       }
-//       Int_t aux = 1;
-//       for(Int_t i = npts-(old_ref); i<=npts; i++){
-//         temp = htemp->GetBinContent(aux);
-//         h->SetBinContent(i,temp);
-//         aux++;
-//       }
-//       delete htemp;
-//     }
 
 
     template <class T>
@@ -406,12 +388,12 @@ class WIENER{
       }
 
 
-
-
     void idx_recompt(Int_t k){
         hfft->SetBinContent(k+1,spec[k].Rho()); // correction for plot
         hPSD->SetBinContent(k+1,spec[k].Rho2()/2.);
+        hphase->SetBinContent(k+1,spec[k].Theta()); // correction for plot
     }
+
     void recompute_hist(){
       for(Int_t k = 0; k<npts/2+1; k++){
         idx_recompt(k);
@@ -539,9 +521,11 @@ class WIENER{
       units_step = 1;
       units_freq = 1;
       delete hfft;
+      delete hphase;
       delete hPSD;
       delete hwvf;
       hfft = new TH1D(Form("fft_%s",obj_name.c_str()),Form("FFT %s",obj_name.c_str()),npts/2,0,frequency/2);
+      hphase = new TH1D(Form("phase_%s",obj_name.c_str()),Form("FFT  phase %s",obj_name.c_str()),npts/2,0,frequency/2);
       hPSD = new TH1D(Form("PSD_%s",obj_name.c_str()),Form("Power Spectral Density %s",obj_name.c_str()),npts/2,0,frequency/2);
       hwvf = new TH1D(Form("wvf_%s",obj_name.c_str()),Form("wvf_%s",obj_name.c_str()),npts,min,max);
 
@@ -569,6 +553,7 @@ class WIENER{
     void startup(){
 
       hfft = new TH1D(Form("fft_%s",obj_name.c_str()),Form("FFT %s",obj_name.c_str()),npts/2,0,frequency/2);
+      hphase = new TH1D(Form("phase_%s",obj_name.c_str()),Form("FFT phase %s",obj_name.c_str()),npts/2,0,frequency/2);
       hPSD = new TH1D(Form("PSD_%s",obj_name.c_str()),Form("Power Spectral Density %s",obj_name.c_str()),npts/2,0,frequency/2);
       hwvf = new TH1D(Form("wvf_%s",obj_name.c_str()),Form("wvf_%s",obj_name.c_str()),npts,0,npts*step);
 
@@ -610,14 +595,18 @@ class WIENER{
 
 
       hfft->GetXaxis()->SetTitle(Form("Frequency (%s)",unit_freq.c_str()));
+      hphase->GetXaxis()->SetTitle(Form("Frequency (%s)",unit_freq.c_str()));
       hPSD->GetXaxis()->SetTitle(Form("Frequency (%s)",unit_freq.c_str()));
+
       hfft->GetYaxis()->SetTitle("ADC");
       hPSD->GetYaxis()->SetTitle("PSD (ADC^{2} Hz^{-1})");
+      hphase->GetYaxis()->SetTitle("#theta");
 
       hwvf->GetXaxis()->SetTitle(Form("Time (%s)",unit_time.c_str()));
       hwvf->GetYaxis()->SetTitle("Amplitude (A.U.)");
       hPSD->SetLineWidth(2);
       hfft->SetLineWidth(2);
+      hphase->SetLineWidth(2);
     }
   
 
