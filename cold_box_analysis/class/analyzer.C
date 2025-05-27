@@ -37,13 +37,18 @@ class ANALYZER{
     Bool_t invert = false;
     Bool_t put_my_offset_back = false;
     Double_t default_scale = 1;
+    Double_t default_offset = 0;
+    Double_t default_roll = 0;
+    
     vector<vector<Double_t>> raw;
     vector<vector<Double_t>> wvf;
     vector<TH1D*> haverage;
     vector<TH1D*> hfft;
     TH1D *h = nullptr;
+    TComplex *spec = nullptr;
     Double_t *time = nullptr;
     Double_t *tempraw = nullptr;
+    Double_t *auxvec = nullptr;
 
     string plot_opt = "AL";
     TGraph *gwvf;
@@ -243,6 +248,7 @@ class ANALYZER{
       }
       xmin = 0;
       xmax = n_points*dtime;
+      auxvec = new Double_t[n_points];
     }
 
     Int_t getIdx(){
@@ -301,6 +307,7 @@ class ANALYZER{
       w->fft(w->hwvf);
       if(inDecibel) w->convertDecibel();
       h = w->hfft;
+      spec = w->spec;
     }
 
     Double_t compute_true_baseline(Double_t baseline, Double_t offset){
@@ -579,7 +586,7 @@ class ANALYZER{
       fout.close();
     }
 
-    void getWaveFromHistogram(TH1D *htemp){
+    void getWaveFromHistogram(TH1 *htemp){
       if (htemp->GetNbinsX() != n_points){
         cout << "Not same amount of samples! Graph has " << htemp->GetNbinsX() << endl;
         return;
@@ -588,8 +595,9 @@ class ANALYZER{
         ch[kch]->wvf[i] = htemp->GetBinContent(i+1);
       }
     }
+
+
     void getWaveFromGraph(TGraph *gtemp){
-      Double_t *xtemp = nullptr;
       Int_t ntemp = gtemp->GetN();
       if (ntemp != n_points){
         cout << "Not same amount of samples! Graph has " << ntemp << endl;
@@ -597,6 +605,17 @@ class ANALYZER{
       }
       for(Int_t i = 0; i < ntemp; i++){
         ch[kch]->wvf[i] = *(gtemp->GetY()+i);
+      }
+    }
+    
+    void getWaveFromVector(vector<Double_t> vin){
+      Int_t ntemp = vin.size();
+      if (ntemp != n_points){
+        cout << "Not same amount of samples! Graph has " << ntemp << endl;
+        return;
+      }
+      for(Int_t i = 0; i < ntemp; i++){
+        ch[kch]->wvf[i] = vin[i];
       }
     }
 
@@ -611,7 +630,9 @@ class ANALYZER{
       b[k]->GetEvent(myevent);
       n_points = ch[k]->npts;
       currentEvent = ch[k]->event;
+      if (default_offset!=0) addOffet(default_offset);
       if (default_scale!=1) scaleWvf(default_scale);
+      if (default_roll!=0) rollWvf(default_roll);
 
       if (!invert && !put_my_offset_back) return;
       else if (invert && put_my_offset_back) addOffsetWithScale(0,0,0,-1);
@@ -796,6 +817,38 @@ class ANALYZER{
         hfft[kch]->GetYaxis()->SetTitle("Magnitude (dB)");
       }
       h = hfft[kch];
+    }
+
+    void averageTComplex(Int_t maxevent = 0, Int_t startevent = 0, string selection = ""){
+      getSelection(selection);
+      Int_t nev = lev->GetN();
+      if (maxevent==0) {
+        maxevent = nev;
+      }
+      if (startevent+maxevent <= nev) {
+        nev = startevent+maxevent;
+      }
+      else{
+        cout << "Maximum number of events is " << nev << endl;
+        return;
+      }
+      Int_t iev = 0;
+      cout << "\n";
+      Int_t total = 0;
+      TComplex *avgspec = new TComplex[n_points];
+      for(Int_t i = startevent; i < nev; i++){
+        iev = lev->GetEntry(i);
+        printev(i,nev);
+        getWaveform(iev,kch);
+        getFFT();
+        for (Int_t j = 0; j < n_points; j++)
+          // Simple way to have two variables
+          avgspec[j] += spec[j];
+        total++;
+      }
+      for (Int_t j = 0; j < n_points; j++)
+        spec[j] = avgspec[j]/TComplex(total,0);
+      cout << "\n";
     }
 
     void averageWaveform(Int_t maxevent = 0, string selection = "", Double_t filter =  0){
@@ -1157,12 +1210,31 @@ class ANALYZER{
       }
     }
 
+    void rollWvf(Double_t roll, Double_t *_filtered = nullptr){
+      if(_filtered == nullptr) _filtered = ch[kch]->wvf;
+      Int_t shift = roll/dtime;
+      // Handle cases where shift is greater than the array size
+      shift = shift % n_points;  // Normalize shift
+      if (shift < 0) shift += n_points;  // Handle negative shifts
+
+      // Copy original array to auxvec
+      for (int i = 0; i < n_points; ++i) {
+        auxvec[i] = _filtered[i];
+      }
+
+      // Shift the values in v by copying from auxvec
+      for (int i = 0; i < n_points; ++i) {
+        int new_index = (i + shift) % n_points;  // Wrap around with modulo
+        _filtered[i] = auxvec[new_index];
+      }
+    }
+
     void addOffet(Double_t offset = 0, Double_t from = 0, Double_t to = 0){
       if(offset == 0){
         offset = ch[kch]->base;
       }
       if(to == 0) to = n_points*dtime;
-      for(Int_t i = from/dtime; i < to/dtime; i++){
+      for(Int_t i = from/dtime; i < int(to/dtime); i++){
         ch[kch]->wvf[i] = ch[kch]->wvf[i] + offset;
       }
     }
@@ -1228,6 +1300,9 @@ class ANALYZER{
       }
       else if(filter_type == "band")
         applyBandCut();
+      else if(filter_type == "hipasstime"){
+        high_pass_filter(filter);
+      }
       else{
         applyFreqFilter();
       }
@@ -1238,6 +1313,7 @@ class ANALYZER{
       if (filter == 0 && _filtered == ch[kch]->wvf) return;
       dn.TV1D_denoise(_raw,_filtered,n_points,filter);
     }
+
 
     void setFreqFilter(Double_t frequency_cut, string filter_type = "gaus"){
       this->filter_type = filter_type;
@@ -1269,6 +1345,18 @@ class ANALYZER{
       w->backfft(*w);
       for(Int_t i = 0; i < n_points; i++){
         _filtered[i] = w->hwvf->GetBinContent(i+1);
+      }
+    }
+    void high_pass_filter(double frequency_cut, Double_t *_raw = nullptr, Double_t *_filtered = nullptr) {
+      checkSignals(&_raw,&_filtered);
+      _filtered[0] = 0;
+
+      double dt = dtime*1e-3; // dt in us
+
+      double RC = 1.0 / (2 * M_PI * frequency_cut);  // in us
+      double alpha = RC / (RC + dt); 
+      for (int n = 1; n < n_points; ++n) {
+        _filtered[n] = alpha * (_filtered[n-1] + _raw[n] - _raw[n-1]);
       }
     }
 
