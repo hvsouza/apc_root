@@ -32,6 +32,7 @@ class WIENER{
   
     TF1 *f_filter = nullptr;
     TF1 *flar = nullptr;
+    TF1 *flar_3gaus = nullptr;
     TF1 *flar_gaus = nullptr;
 
     Double_t *res = nullptr;
@@ -232,6 +233,22 @@ class WIENER{
       flar->SetParName(2,"A_{S}");
       flar->SetParName(3,"#tau_{S}");
 
+
+
+      flar_3gaus = new TF1("flar_3gaus","[0]*( (([2]/[1])*exp(-(x-[5])/[1])*exp([4]*[4]/(2*[1]*[1])))*TMath::Erfc((([5]-x)/[4]+[4]/[1])/TMath::Power(2,0.5))/2. + (([6])/[3])*(exp(-(x-[5])/[3])*exp([4]*[4]/(2*[3]*[3])))*TMath::Erfc((([5]-x)/[4]+[4]/[3])/TMath::Power(2,0.5))/2. + ((1-[2]-[6])/[7])*(exp(-(x-[5])/[7])*exp([4]*[4]/(2*[7]*[7])))*TMath::Erfc((([5]-x)/[4]+[4]/[7])/TMath::Power(2,0.5))/2.)",0,npts*step);
+      flar_3gaus->SetParameters(1e5,10,0.3,1400,20,maxBin*step, 0.6, 200);
+      flar_3gaus->SetParName(0,"A");
+      flar_3gaus->SetParName(1,"#tau_{F}");
+      flar_3gaus->SetParName(2,"A_{fast}");
+      flar_3gaus->SetParName(3,"#tau_{S}");
+      flar_3gaus->SetParName(4,"#sigma");
+      flar_3gaus->SetParName(5,"t_{0}");
+      flar_3gaus->SetParName(6,"A_{slow}");
+      flar_3gaus->SetParName(7,"#tau_{inter}");
+      flar_3gaus->SetParLimits(2, 0, 1);
+      flar_3gaus->SetParLimits(6, 0, 1);
+
+
       // flar_gaus = new TF1("flar_gaus","([0]*exp(-(x-[5])/[1])*exp([4]*[4]/(2*[1]*[1])))*TMath::Erfc((([5]-x)/[4]+[4]/[1])/TMath::Power(2,0.5))/2. + ([2]*exp(-(x-[5])/[3])*exp([4]*[4]/(2*[3]*[3])))*TMath::Erfc((([5]-x)/[4]+[4]/[3])/TMath::Power(2,0.5))/2.",0,npts*step);
       flar_gaus = new TF1("flar_gaus","[0]*(  (([2]/[1])*exp(-(x-[5])/[1])*exp([4]*[4]/(2*[1]*[1])))*TMath::Erfc((([5]-x)/[4]+[4]/[1])/TMath::Power(2,0.5))/2. + ((1-[2])/[3])*(exp(-(x-[5])/[3])*exp([4]*[4]/(2*[3]*[3])))*TMath::Erfc((([5]-x)/[4]+[4]/[3])/TMath::Power(2,0.5))/2. )",0,npts*step);
       flar_gaus->SetParameters(1e5,10,0.3,1400,20,maxBin*step);
@@ -243,6 +260,7 @@ class WIENER{
       flar_gaus->SetParName(5,"t_{0}");
       flar_gaus->SetParLimits(2, 0, 1);
     }
+
     void frequency_deconv(WIENER y, WIENER G, Double_t cutoff_frequency=0, string filter_type = "gaus"){
 
       setFilter(cutoff_frequency,filter_type);

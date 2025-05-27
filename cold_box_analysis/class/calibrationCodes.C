@@ -16,10 +16,10 @@ class  MyFunctionObject{
       Double_t f;
       Double_t xx = x[0];
       f  = abs(par[0])*exp(-0.5*TMath::Power((xx-par[1])/par[2],2)); // first argument
-      f = f+abs(par[3])*exp(-0.5*TMath::Power((xx-par[4])/par[5],2));
-      f = f+abs(par[6])*exp(-0.5*TMath::Power((xx-par[7])/(TMath::Power((2),0.5)*par[5]),2));
+      f = f+abs(par[3])*exp(-0.5*TMath::Power((xx-par[4])/sqrt(par[2]*par[2] + par[5]*par[5]),2));
+      f = f+abs(par[6])*exp(-0.5*TMath::Power((xx-par[7])/sqrt(par[2]*par[2] + 2*par[5]*par[5]),2));
       for(Int_t i = 1; i<n_peaks; i++){
-        f = f+ abs(par[i+7])*exp(-0.5*TMath::Power((xx-(par[4]+(i+1)*(par[7]-par[4])))/(TMath::Power((i+2),0.5)*par[5]),2));
+        f = f+ abs(par[i+7])*exp(-0.5*TMath::Power((xx-(par[4]+(i+1)*(par[7]-par[4])))/sqrt(par[2]*par[2] + (i+2)*par[5]*par[5]),2));
       }
       return f;
     }
@@ -201,6 +201,10 @@ class Calibration
       Double_t nume = exp(-lambda)*TMath::Power(lambda,k);
       return nume/factk;
     }
+
+    Double_t __sigma(Double_t n, const TF1 *func){
+      return std::sqrt( pow(func->GetParameter(2),2) + n*pow(func->GetParameter(5),2) );
+    }                                                                                   
 
     void searchParameters(string histogram, Double_t sigmaSearch = 2, bool debug = false){
 
@@ -637,16 +641,17 @@ class Calibration
     
         fu[1]->SetParameter(0,abs(lastOne->GetParameter(3)));
         fu[1]->SetParameter(1,lastOne->GetParameter(4));
-        fu[1]->SetParameter(2,lastOne->GetParameter(5));
+        fu[1]->SetParameter(2,__sigma(1,lastOne));
     
         fu[2]->SetParameter(0,abs(lastOne->GetParameter(6)));
         fu[2]->SetParameter(1,lastOne->GetParameter(7));
-        fu[2]->SetParameter(2,(TMath::Power((2),0.5)*lastOne->GetParameter(5)));
+        fu[2]->SetParameter(2,__sigma(2,lastOne));
     
         for(Int_t i = 1; i<n_peaks; i++){
           fu[i+2]->SetParameter(0,abs(lastOne->GetParameter(i+7)));
           fu[i+2]->SetParameter(1,(lastOne->GetParameter(4) + (i+1)*(lastOne->GetParameter(7)-lastOne->GetParameter(4))));
-          fu[i+2]->SetParameter(2,(TMath::Power((i+2),0.5)*lastOne->GetParameter(5)));
+          fu[i+2]->SetParameter(2,__sigma(i+2,lastOne));
+
         }
       }
       if (debug_level == 3){
@@ -715,8 +720,8 @@ class Calibration
 
       }
       else{
-        chi2 = lastOneFree->GetChisquare();
-        ndf = lastOneFree->GetNDF();
+        chi2 = lastOne->GetChisquare();
+        ndf = lastOne->GetNDF();
         fit_status = TestFitSuccess();
       }
 
@@ -752,9 +757,15 @@ class Calibration
       if (!quitemode){
         cout << "1th peak = " << lastOne->GetParameter(4) << endl;
         cout << "2th peak = " << lastOne->GetParameter(7) << endl;
-        cout << "Std dev  = " << lastOne->GetParameter(5) << endl;
+        // Double_t sigma1 = sqrt(pow(lastOne->GetParameter(2),2) + 1*pow(lastOne->GetParameter(5),2));
+        Double_t sigma1 = __sigma(1,lastOne);
+        if (make_free_stddevs == true){
+          sigma1 = lastOne->GetParameter(5);
+        }
+        cout << "Std dev  = " << sigma1 << endl;
+
         cout << "sphe charge = " << lastOne->GetParameter(7) - lastOne->GetParameter(4) << endl;
-        cout << " SNR = " << (lastOne->GetParameter(4))/sqrt(pow(lastOne->GetParameter(2),2)+pow(lastOne->GetParameter(5),2)) << endl;
+        cout << " SNR = " << (lastOne->GetParameter(4))/sqrt(pow(lastOne->GetParameter(2),2)+sigma1*sigma1) << endl;
         cout << " SNR2 = " << snr << endl;
 
         out.seekp(0, ios::end);
@@ -764,7 +775,7 @@ class Calibration
         Double_t _mu1 = abs(lastOne->GetParameter(4))*normfactor;
         Double_t _mu2 = abs(lastOne->GetParameter(7))*normfactor;
         Double_t _mu21 = _mu2-_mu1;
-        Double_t _sigma1 = abs(lastOne->GetParameter(5))*normfactor;
+        Double_t _sigma1 = _sigma1*normfactor;
         Double_t _b = abs(lastOne->GetParameter(1))*normfactor;
         Double_t _sigmab = abs(lastOne->GetParameter(2))*normfactor;
         out <<  _mu1  << " " << _mu2 << " " << _mu21 << " "
@@ -781,6 +792,8 @@ class Calibration
       sphe_charge = lastOne->GetParameter(4);
       sphe_charge2 = lastOne->GetParameter(7);
       Double_t sphe_std = lastOne->GetParameter(5);
+      if (!make_free_stddevs)
+        sphe_std = sqrt(pow(lastOne->GetParameter(2),2) + 1*pow(lastOne->GetParameter(5),2));
 
       if(deltaminus!=0)
       {
@@ -969,15 +982,26 @@ class Calibration
       ltext = pleg->AddText(Form("Std Dev: %.2f", hcharge->GetStdDev()));
       ltext = pleg->AddText(Form("#chi^{2} / ndf: %.2f/%d", lastOne->GetChisquare(), lastOne->GetNDF()));
       ltext = pleg->AddText(Form("Fitted gaussians: %d", n_peaks+2));
-      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(0),abs(lastOne->GetParameter(0)), lastOne->GetParError(0)));
-      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(1),lastOne->GetParameter(1), lastOne->GetParError(1)));
-      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(2),abs(lastOne->GetParameter(2)), lastOne->GetParError(2)));
-      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(3),abs(lastOne->GetParameter(3)), lastOne->GetParError(3)));
-      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(4),abs(lastOne->GetParameter(4)), lastOne->GetParError(4)));
-      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(5),abs(lastOne->GetParameter(5)), lastOne->GetParError(5)));
-      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(6),abs(lastOne->GetParameter(6)), lastOne->GetParError(6)));
-      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(7),abs(lastOne->GetParameter(7)), lastOne->GetParError(7)));
-      ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(8),abs(lastOne->GetParameter(8)), lastOne->GetParError(8)));
+      if (make_free_stddevs) 
+      {
+        ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(0),abs(lastOne->GetParameter(0)), lastOne->GetParError(0)));
+        ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(1),lastOne->GetParameter(1), lastOne->GetParError(1)));
+        ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(2),abs(lastOne->GetParameter(2)), lastOne->GetParError(2)));
+        ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(3),abs(lastOne->GetParameter(3)), lastOne->GetParError(3)));
+        ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(4),abs(lastOne->GetParameter(4)), lastOne->GetParError(4)));
+        ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(5),abs(lastOne->GetParameter(5)), lastOne->GetParError(5)));
+        ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(6),abs(lastOne->GetParameter(6)), lastOne->GetParError(6)));
+        ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(7),abs(lastOne->GetParameter(7)), lastOne->GetParError(7)));
+        ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(8),abs(lastOne->GetParameter(8)), lastOne->GetParError(8)));
+      }
+      else{
+        ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(0),abs(lastOne->GetParameter(0)), lastOne->GetParError(0)));
+        ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(1),lastOne->GetParameter(1), lastOne->GetParError(1)));
+        ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(2),abs(lastOne->GetParameter(2)), lastOne->GetParError(2)));
+        ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(3),abs(lastOne->GetParameter(3)), lastOne->GetParError(3)));
+        ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(4),abs(lastOne->GetParameter(4)), lastOne->GetParError(4)));
+        ltext = pleg->AddText(Form("%s: %.2f #pm %.2f",lastOne->GetParName(5),__sigma(1,lastOne), lastOne->GetParError(4)));
+      }
 
       // ((TText*)pleg->GetListOfLines()->Last())->SetTextAlign(23);
       pleg->Draw();
