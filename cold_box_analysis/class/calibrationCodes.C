@@ -775,7 +775,7 @@ class Calibration
         Double_t _mu1 = abs(lastOne->GetParameter(4))*normfactor;
         Double_t _mu2 = abs(lastOne->GetParameter(7))*normfactor;
         Double_t _mu21 = _mu2-_mu1;
-        Double_t _sigma1 = _sigma1*normfactor;
+        Double_t _sigma1 = sigma1*normfactor;
         Double_t _b = abs(lastOne->GetParameter(1))*normfactor;
         Double_t _sigmab = abs(lastOne->GetParameter(2))*normfactor;
         out <<  _mu1  << " " << _mu2 << " " << _mu21 << " "

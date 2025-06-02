@@ -217,12 +217,11 @@ class WIENER{
     }
     void convolve(WIENER *_temp){
       for(Int_t k=0; k<npts/2+1; k++){
-        spec[k] = spec[k]*_temp->spec[k];
+        spec[k] = spec[k]*_temp->spec[k]/factor;
         spec_re[k] = spec[k].Re();
         spec_im[k] = spec[k].Im();
         idx_recompt(k);
       }
-
     }
 
     void set_flar(){
@@ -379,6 +378,16 @@ class WIENER{
       set_flar();
       delete hfinal;
    
+    }
+
+    void convolve(WIENER y, WIENER h){
+      for(Int_t k=0; k<npts/2+1; k++){
+          spec[k] = y.spec[k]*h.spec[k];
+          spec[k] = spec[k]/factor; // Because it is double ?
+          spec_re[k] = spec[k].Re();
+          spec_im[k] = spec[k].Im();
+          idx_recompt(k);
+      }
     }
 
 

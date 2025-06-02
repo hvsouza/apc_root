@@ -22,7 +22,7 @@ class ANALYZER{
     Int_t nchannels = 1;
     vector<Int_t> channels = {1,2};
     vector<string> schannel;
-    Double_t dtime = 2;
+    Double_t dtime = 4;
     string myname;
     string filename = "analyzed.root";
     TEventList *lev = nullptr;
@@ -48,6 +48,7 @@ class ANALYZER{
     TComplex *spec = nullptr;
     Double_t *time = nullptr;
     Double_t *tempraw = nullptr;
+    Double_t *planckwindow = nullptr;
     Double_t *auxvec = nullptr;
 
     string plot_opt = "AL";
@@ -619,6 +620,11 @@ class ANALYZER{
       }
     }
 
+    void getWaveFromTF1(TF1 *f){
+      for(Int_t i = 0; i < n_points; i++){
+        ch[kch]->wvf[i] = f->Eval(i*dtime);
+      }
+    }
 
     void getWaveform(Int_t myevent = 0, Int_t k = -1){
       if (k == -1) k = kch;
@@ -1303,6 +1309,8 @@ class ANALYZER{
       else if(filter_type == "hipasstime"){
         high_pass_filter(filter);
       }
+      else if(filter_type == "window-planck")
+        applyPlanckWindow(filter);
       else{
         applyFreqFilter();
       }
@@ -1347,9 +1355,33 @@ class ANALYZER{
         _filtered[i] = w->hwvf->GetBinContent(i+1);
       }
     }
+
+    void createPranckWindow(Double_t epsilon){
+      delete planckwindow;
+      planckwindow = new Double_t[n_points];
+      planckwindow[0] = 0;
+      for (Int_t i = 1; i < int(n_points*epsilon); i++) {
+        planckwindow[i] = 1./(1 + exp(epsilon*n_points*(1./i - 1/(epsilon*n_points-i))));
+      }
+      for (Int_t i = int(n_points*epsilon); i <= n_points/2; i++) {
+        planckwindow[i] = 1;
+      }
+      for (Int_t i = 0; i < n_points/2; i++) {
+        planckwindow[n_points-i-1] = planckwindow[i];
+      }
+    }
+
+    void applyPlanckWindow(Double_t epsilon, Double_t *_raw = nullptr, Double_t *_filtered = nullptr) {
+      checkSignals(&_raw,&_filtered);
+      if (planckwindow == nullptr) createPranckWindow(epsilon);
+      for (Int_t i = 0; i < n_points; i++) {
+        _filtered[i] = _raw[i] * planckwindow[i];
+      }
+    }
+    
     void high_pass_filter(double frequency_cut, Double_t *_raw = nullptr, Double_t *_filtered = nullptr) {
       checkSignals(&_raw,&_filtered);
-      _filtered[0] = 0;
+      _filtered[0] = _raw[0];
 
       double dt = dtime*1e-3; // dt in us
 
