@@ -79,6 +79,7 @@ using namespace std;
 #include "wiener_filter.C"
 #include "analyzer.C"
 #include "analyzer_plots.C"
+#include "analyzer_utils.C"
 #include "calibrationCodes.C"
 #include "scripts.C"
 #include "old_search_spe.C"

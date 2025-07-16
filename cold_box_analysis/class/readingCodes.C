@@ -226,6 +226,16 @@ public:
 	uint64_t TriggerTimeTag;
 };
 
+class HeadersWaffles{
+
+public:
+
+	int EventSize;
+	int RunNumber;
+	int RecorNumber;
+	uint64_t TriggerTimeTag;
+};
+
 
 class Headers{
 
@@ -285,7 +295,7 @@ public:
 	Bool_t OnlySomeEvents = false; // Do you want only one event? Choose it wisely
 	Int_t stopEvent = 2000;
 
-	Int_t maxEvents = 100000;
+	Int_t maxEvents = -1;
 
 	Double_t baselineTime = 10000; // time limit to start looking for baseline
 	Double_t baselineStart = 0;
@@ -592,6 +602,7 @@ public:
 				thead->Branch("endcharge", &chargeTime);
 				thead->Branch("baselineStart", &baselineStart);
 				thead->Branch("baselineTime", &baselineTime);
+				thead->Branch("baselineFraction", &baselineFraction);
 				thead->Branch("maxRange", &maxRange);
 				thead->Branch("fast_time", &fast);
 				thead->Branch("slow_time", &slow);
@@ -691,7 +702,8 @@ public:
 		Double_t init_time = 0;
 		uint16_t valbin = 0;
 		Headers headbin;
-		HeadersProtoDUNE headbinP;
+		// HeadersProtoDUNE headbinP;
+		HeadersWaffles headbinP;
 		int nbytes = 4;
 		Int_t headers_npoints = 0;
 		Int_t headers_nwvfs = 0;
@@ -762,16 +774,31 @@ public:
 					}
 					else{
 						fin[i].read((char *) &headbinP.EventSize, 4);
+						fin[i].read((char *) &headbinP.RunNumber, 4);
+						fin[i].read((char *) &headbinP.RecorNumber, 4);
 						fin[i].read((char *) &headbinP.TriggerTimeTag, 8);
-						tmpnpoints = headbinP.EventSize;
+						tmpnpoints = (headbinP.EventSize-20)/2;
 						if (tmpnpoints != 0){
 							n_points = tmpnpoints;
 						}
 						else if(tmpnpoints != n_points){
 							cout << "WARNING !!! different waveform length in files!!!" << endl;
 						}
-						evtsize = headbinP.EventSize*2+4+8;
+						evtsize = headbinP.EventSize;
 					}
+					// ProtoDUNE old..
+					// else{
+					// 	fin[i].read((char *) &headbinP.EventSize, 4);
+					// 	fin[i].read((char *) &headbinP.TriggerTimeTag, 8);
+					// 	tmpnpoints = headbinP.EventSize;
+					// 	if (tmpnpoints != 0){
+					// 		n_points = tmpnpoints;
+					// 	}
+					// 	else if(tmpnpoints != n_points){
+					// 		cout << "WARNING !!! different waveform length in files!!!" << endl;
+					// 	}
+					// 	evtsize = headbinP.EventSize*2+4+8;
+					// }
 				}
 				else{
 					evtsize = n_points*2;
@@ -863,10 +890,12 @@ public:
 						}
 						else{
 							fin[i].read((char *) &headbinP.EventSize, 4);
+							fin[i].read((char *) &headbinP.RunNumber, 4);
+							fin[i].read((char *) &headbinP.RecorNumber, 4);
 							fin[i].read((char *) &headbinP.TriggerTimeTag, 8);
 							timestamp = headbinP.TriggerTimeTag;
 
-							n_points = headbinP.EventSize;
+							n_points = (headbinP.EventSize-20)/2;
 							if(n_points != tempsize){
 								ch[i]->Set_npts(n_points);
 								avg[i].resize(n_points);
@@ -965,7 +994,7 @@ public:
 			// numberoflines--;
 			// break;
 			// }
-			if(eventFile<maxEvents){
+			if(eventFile<maxEvents || maxEvents<0){
 				t1->Fill();
 				tEvent+=1;
 

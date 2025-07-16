@@ -22,6 +22,8 @@ class ANALYZER{
     Int_t nchannels = 1;
     vector<Int_t> channels = {1,2};
     vector<string> schannel;
+    map<string, string> map_channel_device;
+    map<string,string> map_device_channel;
     Double_t dtime = 4;
     string myname;
     string filename = "analyzed.root";
@@ -1652,6 +1654,9 @@ class ANALYZER{
     void histoTimeTrigger(Int_t nstart = 0, Int_t nfinish = 0, TH1D *_htemp = nullptr);
     void graphTimeTrigger(Int_t nstart = 0, Int_t nfinish = 0, TGraph *_gtemp = nullptr);
     void check_filtering(vector<Double_t> filter_max_and_step = {0,0}, Int_t event = 0, Int_t rebine = 1, Double_t refFreq = 20);
+    void load_device_map(string experiment = "NP02");
+    bool setDevice(string device="C1(1)");
+    string getDevice(int idx = -1);
 
     ANALYZER(string m_myname = "z") : myname{m_myname}{
     }
