@@ -628,8 +628,8 @@ class Calibration
       if (!quitemode) lastOneFitOpt = "R";
       for(Int_t ktemp = 0; ktemp < lastOneAttempts; ktemp++)
       {
-        hcharge->Fit("lastOne",lastOneFitOpt.c_str());
-        fit_status = TestFitSuccess();
+        fit_status = hcharge->Fit("lastOne",lastOneFitOpt.c_str());
+        fit_status = TestFitSuccess(fit_status);
         if (fit_status == 1) break;
       }
       if(!quitemode) cout << "Fit status before free std dev: " << fit_status << endl;
@@ -692,10 +692,10 @@ class Calibration
 
         string lastOneFitFreeOpt = "RQ0S";
         if (!quitemode) lastOneFitFreeOpt = "RS";
-        hcharge->Fit("lastOneFree",lastOneFitFreeOpt.c_str());
+        fit_status = hcharge->Fit("lastOneFree",lastOneFitFreeOpt.c_str());
         chi2 = lastOneFree->GetChisquare();
         ndf = lastOneFree->GetNDF();
-        fit_status = TestFitSuccess();
+        fit_status = TestFitSuccess(fit_status);
         if(!quitemode) cout << "Fit status with free std dev: " << fit_status << endl;
 
 
@@ -722,7 +722,7 @@ class Calibration
       else{
         chi2 = lastOne->GetChisquare();
         ndf = lastOne->GetNDF();
-        fit_status = TestFitSuccess();
+        fit_status = TestFitSuccess(fit_status);
       }
 
 
@@ -1067,8 +1067,12 @@ class Calibration
       }
     }
 
-    bool TestFitSuccess(bool verbose = false)
+    bool TestFitSuccess(bool current_status, bool verbose = false)
     {
+      if (gMinuit == nullptr)
+      {
+        return current_status;
+      }
       std::string minuitstatus = std::string(gMinuit->fCstatu);
       if(minuitstatus.compare("CONVERGED ") != 0 && minuitstatus.compare("OK        ") != 0) //the spaces are important
       {
