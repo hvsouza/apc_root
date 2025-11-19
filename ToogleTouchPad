@@ -1,6 +1,7 @@
 #!/bin/bash
 # just create a short cut to this bad boy here 
-touchpad_id=`xinput list --id-only "DELL0A68:00 06CB:CE65 Touchpad"`
+# touchpad_id=`xinput list --id-only "ELAN06D4:00 04F3:32B5 Touchpad"`
+touchpad_id=`xinput list | grep Touch | awk -F'id=' '{print $2}' | awk -F\  '{print $1}'`
 
 
 #[01] searches for 0 or 1, $ will take first result for some reason...

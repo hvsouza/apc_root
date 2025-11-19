@@ -42,13 +42,14 @@ data = pl.read_csv("./PrStoppingPowerLAr.csv")
 data = data.with_columns(
     range = pl.col("CSDA")/1.396,
     E = pl.col('Kinetic') + 938.272,
-    p = (pl.col('Kinetic') + 938.272)**2 - 938.272,
+    p = ((pl.col('Kinetic') + 938.272)**2 - (938.272)**2).sqrt(),
 )
 
 fakeR = np.linspace(data['range'].min(), data['range'].max(),1000)
 fakeK = [ larsoft_thing(R) for R in fakeR ]
+fakeP = [ np.sqrt((938.272 + larsoft_thing(R))**2 - (938.272)**2) for R in fakeR ]
 
 
-plt.plot(data['range'], data['Kinetic'])
-plt.plot(fakeR, fakeK)
+plt.plot(data['range'], data['p'])
+plt.plot(fakeR, fakeP)
 plt.show()
