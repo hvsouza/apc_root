@@ -6,6 +6,7 @@
 - [PDS analysis class](#pds-analysis-class)
     - [Introduction](#introduction)
     - [How to use:](#how-to-use)
+        - [Most common methods](#most-common-methods)
         - [Most common scripts](#most-common-scripts)
 <!-- markdown-toc end -->
 
@@ -70,6 +71,62 @@ For this "online" plottings, the methods are located in `analyzer_plots.C` and `
 
 
 This `ANALYZER` class gives a fast and simple way to write scripts and handle the data. 
+
+
+### Most used methods
+
+This is a list of the most used methods:
+
+``` root
+s.sample_plot(Int_t myevent = 0, string opt = "", Double_t filter = 0)
+```
+Plot the waveform of event `myevt`.<br> loading the event from the TTree.<br>
+`opt` is the drawing option (e.g. `"SAME"` to draw in the same canvas).<br>
+`filter` is the parameter for the TV1D denoising filter (0 means no denoising).
+
+``` root
+s.drawGraph(string opt = "")
+```
+
+Draw the graph of whatever is stored in s.ch[s.kch]->wvf (the current channel).<br>
+`opt` is the drawing option (e.g. `"SAME"` to draw in the same canvas).<br>
+It returns the TGraph object drawn.
+
+
+
+``` root
+persistence_plot(Int_t nbins = 500, Double_t ymin = -500, Double_t ymax = 500, Double_t filter = 0, string cut = "")
+```
+Plot the persistence plot of the data after applying the `cut` (if any).<br>
+`nbins`, `ymin` and `ymax` are the parameters for the histogram.<br>
+`filter` is the parameter for the TV1D denoising filter (0 means no denoising).
+
+
+``` root
+s.averageWaveform(Int_t maxevent = 0, string selection = "", Double_t filter = 0)
+```
+Compute and plot the average waveform of the data after applying the `selection` (if any).<br>
+`maxevent` is the maximum number of events to be used (0 means all events).<br>
+`filter` is the parameter for the TV1D denoising filter (0 means no denoising).<br>
+Result is stores in `s.h` as a TH1D. To retrive it as a waveform that can be proceesed by the ANALYZER class, use `s.getWaveFromHist(s.h)`.
+
+
+``` root
+s.averageFFT(Int_t maxevent = 0, Int_t startevent = 0, string selection = "", bool inDecibel = true, Double_t factor = 0, Double_t filter = 0)
+```
+Compute and plot the average FFT of the data after applying the `selection` (if any).<br>
+`maxevent` is the maximum number of events to be used (0 means all events).
+`startevent` is the first event to be used.<br>
+`inDecibel` if true the FFT is plotted in dB scale.<br>
+`factor` is a multiplicative factor applied to the FFT amplitude (useful for calibration).<br>
+`filter` is the parameter for the TV1D denoising filter (0 means no denoising).<br>
+Result is stores in `s.h` as a TH1D and also into `s.hfft[s.kch]` as the FFT of the current channel.
+
+
+
+
+
+
 
 
 ### Most common scripts
