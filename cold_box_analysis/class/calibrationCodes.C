@@ -477,7 +477,7 @@ class Calibration
 
       //First function, will almost fit freely
       TF1 *func = new TF1("func",startingPump().c_str(),xmin,xmax);
-      TF1 *fu[2+n_peaks];
+      vector<TF1*> fu(2+n_peaks);
       string funame;
       for(Int_t i = 0; i<(2+n_peaks); i++){
         funame = "fu_"+to_string(i);
