@@ -11,15 +11,18 @@ class  MyFunctionObject{
   public:
 
     Int_t n_peaks;
+    Double_t sigma(Int_t n, Double_t *par){
+      return std::sqrt( par[2]*par[2] + n*par[5]*par[5] );
+    }
     // use constructor to customize your function object
     Double_t operator()(Double_t *x, Double_t *par) {
       Double_t f;
       Double_t xx = x[0];
       f  = abs(par[0])*exp(-0.5*TMath::Power((xx-par[1])/par[2],2)); // first argument
-      f = f+abs(par[3])*exp(-0.5*TMath::Power((xx-par[4])/sqrt(par[2]*par[2] + par[5]*par[5]),2));
-      f = f+abs(par[6])*exp(-0.5*TMath::Power((xx-par[7])/sqrt(par[2]*par[2] + 2*par[5]*par[5]),2));
+      f = f+abs(par[3])*exp(-0.5*TMath::Power((xx-par[4])/this->sigma(1,par),2));
+      f = f+abs(par[6])*exp(-0.5*TMath::Power((xx-par[7])/this->sigma(2,par),2));
       for(Int_t i = 1; i<n_peaks; i++){
-        f = f+ abs(par[i+7])*exp(-0.5*TMath::Power((xx-(par[4]+(i+1)*(par[7]-par[4])))/sqrt(par[2]*par[2] + (i+2)*par[5]*par[5]),2));
+        f = f+ abs(par[i+7])*exp(-0.5*TMath::Power((xx-(par[4]+(i+1)*(par[7]-par[4])))/this->sigma(i+2, par),2));
       }
       return f;
     }
@@ -484,8 +487,8 @@ class Calibration
         fu[i] = new TF1(funame.c_str(),"gaus(0)",xmin,xmax);
       }
     
-      Double_t peaks[n_peaks];
-      Double_t stdpeaks[n_peaks];
+      vector<Double_t> peaks(n_peaks);
+      vector<Double_t> stdpeaks(n_peaks);
     
       if(peak0==0){
         fixZero = true;
@@ -525,7 +528,7 @@ class Calibration
         func->FixParameter(2,sigma0);
       }
     
-      getMyParameters(peaks,stdpeaks,func);
+      getMyParameters(peaks.data(),stdpeaks.data(),func);
     
     
       Double_t scale = 1/(hcharge->Integral());
@@ -544,7 +547,7 @@ class Calibration
       }
 
       // recovery parameters
-      getMyParameters(peaks,stdpeaks,func);
+      getMyParameters(peaks.data(),stdpeaks.data(),func);
       aux=0;
       // use as fixed
       for(Int_t i = 0; i<n_peaks; i++){

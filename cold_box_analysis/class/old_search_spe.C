@@ -268,13 +268,13 @@ class SPHE{
       Int_t aux_sample = 0;
 
 
-      Double_t statcharge[npeaks];
-      Double_t statpeak[npeaks];
-      Double_t trackLow[npeaks];
-      Double_t trackHigh[npeaks];
-      Double_t trackStrikes[npeaks];
-      Double_t statpos[npeaks];
-      Bool_t discard_this[npeaks];
+      vector<Double_t> statcharge(npeaks);
+      vector<Double_t> statpeak(npeaks);
+      vector<Double_t> trackLow(npeaks);
+      vector<Double_t> trackHigh(npeaks);
+      vector<Double_t> trackStrikes(npeaks);
+      vector<Double_t> statpos(npeaks);
+      vector<Bool_t> discard_this(npeaks);
 
       vector<vector<Double_t>> temp_waveforms(npeaks);
       vector<Double_t> waveforms(memorydepth);
